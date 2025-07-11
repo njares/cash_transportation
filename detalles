@@ -1,0 +1,33 @@
+Como correr cada combinación modelador/solver:
+
+- zimpl/scip
+	- Correr en un terminal
+
+scip -b scip.b
+
+- pulp/cbc
+	- Correr en python:
+
+exec(open('model.py').read())
+problem = model_problem(amount_of_days=31, amount_of_branches=3, amount_of_routes=5, route_branches_csv="data/rutas.csv", cost_routes_csv="data/costo_rutas.csv", cash_in_branch_csv="data/e0.csv", box_amounts_csv="data/buzon.csv", business_days_csv="data/habiles.csv", collection_csv="data/recaudacion.csv", extra_box_percent=0.17, debug=True, scip=False, last_days_collection=[29,30], daily_interest_rate=0.0)
+pulp.value(problem.objective)
+for var in problem.variables():
+	if var.varValue == 1:
+		print(var.name, " = ", var.varValue)
+
+- zimpl/cbc
+	- correr en un terminal:
+
+zimpl -t mps modelo_3.zpl
+cbc modelo_3.mps solve solu modelo_3.sol
+
+- pulp/scip
+	- correr en python:
+
+exec(open('model.py').read())
+problem = model_problem(amount_of_days=31, amount_of_branches=3, amount_of_routes=5, route_branches_csv="data/rutas.csv", cost_routes_csv="data/costo_rutas.csv", cash_in_branch_csv="data/e0.csv", box_amounts_csv="data/buzon.csv", business_days_csv="data/habiles.csv", collection_csv="data/recaudacion.csv", extra_box_percent=0.17, debug=True, scip=True, last_days_collection=[29,30], daily_interest_rate=0.0)
+pulp.value(problem.objective)
+for var in problem.variables():
+	if var.varValue == 1:
+		print(var.name, " = ", var.varValue)
+

@@ -1,0 +1,66 @@
+Versión 1:
+Variables
+  x_{td} \in \{0,1\}, si el camión hace la ruta t en el día d
+  e_{sd}, efectivo en la sucursal s en el día d
+Datos
+  r_{sd}, recaudación de sucursal s en día d
+  b_s, buzón (con margen de seguridad) en sucursal s
+  S_t=\{s_{i_1},...,s_{i_t}\} sucursales en ruta t
+  
+Problema
+  minimizar_{e,x} \sum_d \sum_t x_{td}
+  s.a
+  e_{sd}=e_{s,d-1}+r_{sd}-e_{s,d-1}x_{td} \forall d, \forall s\in S_t, \forall t
+  0\leq e_{sd} \leq b_s \forall s, \forall d
+  x_{t,30}=1
+  
+OJO: la primera restricción no es lineal
+%%%%%%%%%%%%%%%
+
+Versión 2:
+Variables
+  x_{td} \in \{0,1\}, si el camión hace la ruta t en el día d
+  e_{sd}, efectivo en la sucursal s en el día d
+  q_{sd}, cantidad retirada en la sucursal s en el día d
+Datos
+  r_{sd}, recaudación de sucursal s en día d
+  b_s, buzón (con margen de seguridad) en sucursal s
+  S_t=\{s_{i_1},...,s_{i_t}\} sucursales en ruta t
+  
+Problema
+  minimizar_{e,q,x} \sum_d \sum_t x_{td}
+  s.a
+  e_{sd}=e_{s,d-1}+r_{sd}-q_{s,d-1} \forall d, \forall s
+  \sum_{s\in S_t} q_{sd} \leq M x_{td} \forall d, \forall t
+  0\leq e_{sd} \leq b_s \forall s, \forall d
+  0\leq q_{sd} \leq e_{s,d-1} \forall s, \forall d
+  x_{t,30}=1
+
+OJO: verificar que la solución sea retirar siempre todo el efectivo
+
+%%%%%%%%%%%%%%%
+
+Versión 3:
+Variables
+  x_{dp} \in \{0,1\}, si se usa la ruta p en el día d
+  e_{sd}, efectivo en la sucursal s en el día d
+  t_{sdp}, cantidad retirada en la sucursal s en el día d usando la ruta p
+Datos
+  e_{s0}, efectivo inicial en la sucursal s
+  r_{sd}, recaudación de sucursal s en día d
+  b_s, buzón (con margen de seguridad) en sucursal s
+  c_p, costo de utilizar la ruta p
+  m_{sp} \in \{0,1\}, si la sucursal s está en la ruta p
+  h_{dp} \in \{0,1\}, si el día d es hábil para la ruta p
+  
+Problema
+  minimizar_{x} \sum_d \sum_p c_p x_{dp}
+  s.a
+  e_{sd}=e_{s,d-1}+r_{sd}-\sum_p t_{sdp} \forall s, \forall d
+  e_{sn_d}=r_{sn_d}, \forall s
+  \sum_s m_{sp}t_{sdp} \leq M x_{dp}, \forall d, \forall p
+  \sum_s (1-m_{sp})t_{sdp} = 0, \forall d, \forall p
+  0\leq e_{sd} \leq b_s \forall s, \forall d
+  0\leq t_{sdp} \leq e_{s,d-1} \forall s, \forall d, \forall p
+  x_{dp}\in \{0,1\}, x_{dp} \leq h_{dp}, \forall d, \forall p
+ 

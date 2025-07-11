@@ -1,0 +1,12 @@
+[default] 
+# Comentario
+data_dir =  ./data
+input_excel = DatosEntrada.xlsx
+output_excel = Plan.xlsx
+ignore = 
+
+[debug]
+data_dir =  ./data
+input_excel = DatosEntrada.xlsx
+output_excel = Plan.xlsx
+ignore = 

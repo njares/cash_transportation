@@ -1,0 +1,21 @@
+datos_modelo.csv
+
+int n , int m, int M
+
+n: Cantidad de sucursales
+m: Cantidad de días
+M: Número grande para restricción
+
+
+recaudaciones.csv
+
+float r[n][m]
+
+r: Matriz de tamaño n x m de recaudaciones en cada sucursal por día. 
+
+
+buzones.csv
+
+float b[n]
+
+b: Vector de tamaño n de capacidades de buzones de cada sucursal.
