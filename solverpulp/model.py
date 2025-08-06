@@ -11,7 +11,7 @@ def model_problem(
     route_branches_csv, cost_routes_csv, cash_in_branch_csv,
     box_amounts_csv, business_days_csv, collection_csv,
     last_days_collection=list(), extra_box_percent=0.0, daily_interest_rate=0.0,
-    debug=False, scip=False, n_thr=4):
+    debug=False, solver='cbc', n_thr=4):
     """
     Función que modela y resuelve el problema de envío de camiones de acuerdo a los datos
     de entrada, que vienen en forma de CSVs.
@@ -63,7 +63,7 @@ def model_problem(
     # Costo de tomar cada ruta
     cost_routes_df = pd.read_csv(cost_routes_csv, header=None)
     cost_routes = {
-        ridx: float(cost_routes_df.iloc[ridx]) for ridx in routes
+        ridx: float(cost_routes_df.iloc[ridx,0]) for ridx in routes
     }
 
     if debug:
@@ -72,7 +72,7 @@ def model_problem(
     # Efectivo inicial en cada sucursal
     cash_branches_df = pd.read_csv(cash_in_branch_csv, header=None)
     first_cash_in_branch = [
-        float(cash_branches_df.iloc[bidx]) for bidx in branches
+        float(cash_branches_df.iloc[bidx,0]) for bidx in branches
     ]
 
     if debug:
@@ -81,7 +81,7 @@ def model_problem(
     # Efectivo máximo de cada buzón
     box_amounts_df = pd.read_csv(box_amounts_csv, header=None)
     box_max = [
-        float(box_amounts_df.iloc[bidx]) for bidx in branches
+        float(box_amounts_df.iloc[bidx,0]) for bidx in branches
     ]
 
     if debug:
@@ -226,10 +226,20 @@ def model_problem(
                 ]) >= 1
 
         solv = None
-        
-        if scip:
-            solv = pulp.apis.scip_api.SCIP_CMD(msg=msg_flag)
+
+        if solver=='scip':
+             #solv = pulp.apis.scip_api.SCIP_CMD(msg=msg_flag)
+             solv = pulp.apis.SCIP_CMD(msg=msg_flag)
+        elif solver == 'fscip':
+            #solv = pulp.apis.fscip_api.FSCIP_CMD(msg=msg_flag)
+            solv = pulp.apis.FSCIP_CMD(msg=msg_flag)
+        elif solver == 'cbc':
+            #solv = pulp.PULP_CBC_CMD(dual=1, strong=1, msg=msg_flag, presolve=1, threads=n_thr)
+            solv = pulp.PULP_CBC_CMD(strong=1, msg=msg_flag, presolve=1, threads=n_thr)
+        elif solver == "cuopt":
+            solv = pulp.CUOPT(msg=msg_flag)
         else:
+            print("WARNING: Unkown solver, defaulting to cbc")
             #solv = pulp.PULP_CBC_CMD(dual=1, strong=1, msg=msg_flag, presolve=1, threads=n_thr)
             solv = pulp.PULP_CBC_CMD(strong=1, msg=msg_flag, presolve=1, threads=n_thr)
         
