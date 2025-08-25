@@ -8,12 +8,13 @@ import json
 # Parámetros configurables
 
 n_thr = 8 # cantidad de hilos
-N_min = 3 # mínimo de iteraciones por escenario
-N_max = 122 # máximo de iteraciones por escenario
+N_min = 1 # mínimo de iteraciones por escenario
+N_max = 0 # máximo de iteraciones por escenario
 solver = 'fscip' # solver
+COLLECTION_MULT = 1.0
 
 # experimento actual
-exp_id = "exp_1.json"
+exp_id = "exp_2.json"
 
 ########################################################################
 # Parámetros fijos
@@ -64,11 +65,11 @@ costos_rutas = np.array([\
 #		1.5e-03 = (total costo logisticio mensual) / (total recaudacion mensual)
 # (total recaudacion mensual) = 1
 
-costos_rutas = costos_rutas * 1.5e-3 / (4 * np.average(costos_rutas))
+costos_rutas = COLLECTION_MULT*costos_rutas * 1.5e-3 / (4 * np.average(costos_rutas))
 costos_rutas = pd.DataFrame(costos_rutas)
 
 # días hábiles
-dias_habiles_profile = [1,1,1,1,1,0,0]*4+[1,1]
+dias_habiles_profile = [1,1,1,1,1,1,0]*4+[1,1]
 dias_habiles = np.tile(dias_habiles_profile,(n_p,1))
 dias_habiles = pd.DataFrame(dias_habiles)
 
@@ -79,21 +80,25 @@ prop_suc = pd.DataFrame(prop_suc)
 # - perfil de recaudación
 #	- dos perfiles: constante y con un pico
 
-collections_profile_constant = np.ones(30)
-collections_profile_constant /= np.sum(collections_profile_constant)
-collections_constant = np.tile(collections_profile_constant,(n_s,1))
+#collections_profile_constant = np.ones(30)
+collections_profile_constant = np.array(dias_habiles_profile)
+collections_profile_constant = collections_profile_constant / np.sum(collections_profile_constant)
+collections_constant = np.tile(collections_profile_constant,(n_s,1))*COLLECTION_MULT
 
 # ver varianza_diaria.py
 #constant_std = 0.025
-constant_std = (1/30)*.525
+#constant_std = (1/30)*.525
+constant_std = collections_profile_constant[0]*.525*COLLECTION_MULT
 
 collections_profile_V = np.hstack([np.linspace(1,2,10,endpoint=False),np.linspace(2,1,20,endpoint=False)])
+collections_profile_V = collections_profile_V*np.array(dias_habiles_profile)
 collections_profile_V /= np.sum(collections_profile_V)
-collections_V = np.tile(collections_profile_V,(n_s,1))
+collections_V = np.tile(collections_profile_V,(n_s,1))*COLLECTION_MULT
 
 # ver varianza diaria.py
 #V_std = 0.01640
-V_std = (1/30)*.3444
+#V_std = (1/30)*.3444
+V_std = collections_profile_constant[0]*.3444*COLLECTION_MULT
 
 collections_profiles = [collections_constant,collections_V]
 std_profiles = [constant_std, V_std]

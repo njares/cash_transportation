@@ -120,7 +120,7 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
 	habiles_csv_path = os.path.join(data_dir, "habiles.csv")
 	# generar semilla
 	rand_seed = len(exp_dict)
-	exp_dict[rand_seed] = {}
+	exp_dict[str(rand_seed)] = {}
 	# generar perfiles aleatorios
 	rng = np.random.default_rng(seed=rand_seed)
 	profiles_names = ["constant", "V"]
@@ -146,10 +146,10 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
 		# Recaudacion inicial
 		e_zero_csv_path = os.path.join(data_dir, "e0.csv")
 		e_zero.to_csv(e_zero_csv_path, header=False, index=False)
-		exp_dict[rand_seed][name] = {}
+		exp_dict[str(rand_seed)][name] = {}
 		for interes_anual in np.linspace(0,10,11):
 			interes = (1+interes_anual/100)**(1/365)-1
-			exp_dict[rand_seed][name][interes_anual] = {}
+			exp_dict[str(rand_seed)][name][str(interes_anual)] = {}
 			#cantidad de recolecciones mensuales
 			for b in range(4):
 				buzones = np.ones(n_s) / (b+1)
@@ -188,8 +188,36 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
 					import pdb;
 					pdb.set_trace()
 					return -1
-				exp_dict[rand_seed][name][interes_anual][b] = [costo_total, costo_financiero]
+				exp_dict[str(rand_seed)][name][str(interes_anual)][str(b)] = [costo_total, costo_financiero]
 	return exp_dict
+
+def calcula_delta_std(exp_dict):
+	N_seeds = len(exp_dict)
+	delta_std = 0.0 # quiero la máxima delta_std
+	# para cada exp_setup
+	for perfil in ["constant", "V"]:
+		for interes_anual in np.linspace(0,10,11):
+			for b in range(4):
+				# recorrer las seeds
+				costos_totales = [exp_dict[str(seed)][perfil][str(interes_anual)][str(b)][0] for seed in range(N_seeds)]
+				costos_financi = [exp_dict[str(seed)][perfil][str(interes_anual)][str(b)][1] for seed in range(N_seeds)]
+				# calcular las std
+				std_total_last = np.std(costos_totales)
+				std_finan_last = np.std(costos_financi)
+				std_total_prev = np.std(costos_totales[:-1])
+				std_finan_prev = np.std(costos_financi[:-1])
+				# ver la variación porcentual
+				if std_total_last==0 or std_total_prev==0:
+					delta_std_total = 0.0
+				else:
+					delta_std_total = np.abs((std_total_last-std_total_prev)/std_total_last)
+				if std_finan_last==0 or std_finan_prev==0:
+					delta_std_finan = 0.0
+				else:
+					delta_std_finan = np.abs((std_finan_last-std_finan_prev)/std_finan_last)
+				current_delta_std = max(delta_std_total, delta_std_finan)
+				delta_std = max(current_delta_std, delta_std)
+	return delta_std
 
 # Llaves:
 #	- rand_seed (1)
