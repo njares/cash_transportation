@@ -10,11 +10,11 @@ import json
 n_thr = 8 # cantidad de hilos
 N_min = 1 # mínimo de iteraciones por escenario
 N_max = 0 # máximo de iteraciones por escenario
-solver = 'fscip' # solver
+solver = 'gurobi' # solver
 COLLECTION_MULT = 1.0
 
 # experimento actual
-exp_id = "exp_2.json"
+exp_id = "exp_2025-10-10-01.json"
 
 ########################################################################
 # Parámetros fijos
