@@ -240,6 +240,8 @@ def model_problem(
             solv = pulp.CUOPT(msg=msg_flag)
         elif solver == "gurobi":
             solv = pulp.GUROBI(msg=msg_flag)
+        elif solver == "HiGHS":
+            solv = pulp.HiGHS(msg=msg_flag)
         else:
             print("WARNING: Unkown solver, defaulting to cbc")
             #solv = pulp.PULP_CBC_CMD(dual=1, strong=1, msg=msg_flag, presolve=1, threads=n_thr)
