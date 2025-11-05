@@ -206,7 +206,6 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
 
 
 def calcula_delta_std(exp_dict):
-    import pdb; pdb.set_trace()
     # Get actual seed keys, excluding _meta
     seed_keys = [k for k in exp_dict.keys() if k != '_meta']
     N_seeds = len(seed_keys)
