@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cash-transportation"
+version = "0.1.0"
+description = "Optimization tooling for cash transportation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pandas>=2.2",
+  "numpy>=2.0",
+  "pulp>=2.8",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+

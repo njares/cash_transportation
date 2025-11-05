@@ -1,3 +1,21 @@
+# Bytecode
+**/__pycache__/
+*.pyc
+
+# Generated data and artifacts
+data/generated/**
+artifacts/solutions/**
+artifacts/logs/**
+artifacts/metadata/**
+
+# Notebooks caches
+**/.ipynb_checkpoints/**
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 venv
 *.pyc
 .DS_Store

@@ -1,20 +1,47 @@
 import numpy as np
 import pandas as pd
 import sys
-from helpers import *
+import os as _os
+# Ensure 'src' is on sys.path so 'cash_transportation' is importable without installation
+_repo_root = _os.path.dirname(_os.path.abspath(__file__))
+_repo_root = _os.path.dirname(_repo_root)
+_src_path = _os.path.join(_repo_root, "src")
+if _src_path not in sys.path:
+    sys.path.insert(0, _src_path)
+from cash_transportation.helpers import *
 import json
+import argparse
+import os
+import time
 
 ########################################################################
-# Parámetros configurables
+# Parámetros configurables (via CLI)
 
-n_thr = 8 # cantidad de hilos
-N_min = 1 # mínimo de iteraciones por escenario
-N_max = 0 # máximo de iteraciones por escenario
-solver = 'gurobi' # solver
-COLLECTION_MULT = 1.0
+parser = argparse.ArgumentParser(description="Experimento 2 - corridas con distintos perfiles/solvers")
+parser.add_argument("--threads", type=int, default=8, help="cantidad de hilos")
+parser.add_argument("--n-min", type=int, default=1, help="mínimo de iteraciones por escenario")
+parser.add_argument("--n-max", type=int, default=0, help="máximo de iteraciones por escenario (0 = sin tope)")
+parser.add_argument("--solver", type=str, default="HiGHS", help="solver a utilizar (ej. HiGHS, fscip)")
+parser.add_argument("--collection-mult", type=float, default=1.0, help="multiplicador de recaudación total")
+parser.add_argument("--exp-id", type=str, default="exp_test.json", help="archivo JSON del experimento (nombre simple se guarda en experiments/runs)")
+parser.add_argument("--data-dir", type=str, default="./data/", help="directorio donde escribir CSVs de entrada generados")
+args = parser.parse_args()
 
-# experimento actual
-exp_id = "exp_2025-10-10-01.json"
+n_thr = args.threads
+N_min = args.n_min
+N_max = args.n_max
+solver = args.solver
+COLLECTION_MULT = args.collection_mult
+exp_id = args.exp_id
+if os.path.sep not in exp_id and not exp_id.startswith('/'):
+    # guardar por defecto en experiments/runs si es un nombre simple
+    exp_id = os.path.join(_repo_root, 'experiments', 'runs', exp_id)
+exp_dir = os.path.dirname(exp_id)
+if exp_dir:
+    os.makedirs(exp_dir, exist_ok=True)
+if not os.path.exists(exp_id):
+    with open(exp_id, 'w', encoding='utf-8') as _f:
+        json.dump({}, _f)
 
 ########################################################################
 # Parámetros fijos
@@ -103,7 +130,7 @@ V_std = collections_profile_constant[0]*.3444*COLLECTION_MULT
 collections_profiles = [collections_constant,collections_V]
 std_profiles = [constant_std, V_std]
 
-data_dir = './data/'
+data_dir = args.data_dir
 
 # Dias habiles por ruta
 habiles_csv_path = os.path.join(data_dir, "habiles.csv")
@@ -162,108 +189,3 @@ sys.exit()
 
 # print tablita con mean +- std
 
-########################################################################
-########################################################################
-########################################################################
-
-# - capacidad de buzones: ajustar para diferentes cantidades de retiros mensuales: 1, 2, 3, etc
-
-k = 1
-
-Ganancias = []
-Tiempos = []
-
-# interes
-# 	- Una vez que tengamos el esquema de trabajo acordado, hay que bajarlo hasta detectar el umbral a partir del cual la 
-#		inclusión de costo financiero no es relevante.
-# interes = (1+40/100)**(1/365)-1
-
-N = 1
-
-for i in range(N):
-	for interes_anual in [0.5,1,1.5,2,2.5,3,3.5,4.0,4.5]:
-		interes = (1+interes_anual/100)**(1/365)-1
-		for collections,std in zip(collections_profiles,std_profiles):
-			e_zero = collections[:,0]
-			rand_collect = np.random.normal(loc=0.0,scale=std,size=collections.shape)
-			rand_e_zero = np.random.normal(loc=0,scale=std,size=e_zero.shape)
-			# la std constante es 52% de la recaudación diaria
-			# 1.9 asegura no tener recaudaciones negativas
-			rand_collect = np.clip(rand_collect,-1.9*std,1.9*std)
-			rand_e_zero = np.clip(rand_e_zero,-1.9*std,1.9*std)
-			collections = collections + rand_collect
-			e_zero = e_zero + rand_e_zero
-			e_zero = pd.DataFrame(e_zero)
-			collections = pd.DataFrame(collections)
-			for b in range(4): #cantidad de recolecciones mensuales
-				buzones = np.ones(n_s) / (b+1)
-				buzones = pd.DataFrame(buzones)
-				
-				print("Resolviendo caso {}/{}... ".format(k,2*4*N*9),end='')
-				sys.stdout.flush()
-				start = time.time()
-				# Calcular ganancia
-				#ganancia = calculo_ganancia(dias_habiles, rutas, costos_rutas, interes, prop_suc, collections, e_zero, buzones, n_thr=n_thr, solver='fscip', debug=False)
-				ganancia = calculo_ganancia(dias_habiles, rutas, costos_rutas, interes, prop_suc, collections, e_zero, buzones, n_thr=n_thr, solver='fscip', debug=False)
-				tiempo = time.time()-start
-				print("ganancia={} t={:.2f}".format(ganancia,tiempo))
-				sys.stdout.flush()
-				k += 1
-				Ganancias.append(ganancia)
-				Tiempos.append(tiempo)
-
-Ganancias = np.array(Ganancias)
-Tiempos = np.array(Tiempos)
-
-Ganancias = Ganancias.reshape(N,9,8)
-Tiempos = Tiempos.reshape(N,9,8)
-
-for i in range(9): # bucle sobre los intereses
-	for j in range(8): # bucle sobre los casos
-		ganancia = Ganancias[:,i,j]
-		ganancia = ganancia[Ganancias[:,i,j]!=-1]
-		# tiempo = Tiempos[:,i,j]
-		# tiempo = tiempo[Ganancias[:,i,j]!=-1]
-		
-		mean_Ganancias = np.mean(ganancia)
-		# mean_Tiempos = np.mean(tiempo)
-		std_Ganancias = np.std(ganancia)
-		# std_Tiempos = np.std(tiempo)
-		print("{:.2f}+-{:.2f}".format(mean_Ganancias,std_Ganancias),end=' ')
-	print("")
-
-# ~ if str(n_p) not in rutas_exploradas[str(n_s)].keys():
-	# ~ rutas_exploradas[str(n_s)][str(n_p)] = {}
-
-# ~ if rutas_key not in rutas_exploradas[str(n_s)][str(n_p)].keys():
-	# ~ rutas_exploradas[str(n_s)][str(n_p)][rutas_key] = {}
-
-	# ~ # Guardar resultado en el diccionario
-	# ~ rutas_exploradas[str(n_s)][str(n_p)][rutas_key]['default'] = [ganancia,tiempo]
-
-	# ~ with open('rutas_exploradas.json','w+',encoding='utf-8') as f:
-		# ~ json.dump(rutas_exploradas,f)
-
-# ~ print(n_s)
-# ~ print('  '+str(n_p))
-# ~ dat=' '.join(map(str,rutas_exploradas[str(n_s)][str(n_p)][rutas_key]['default']))
-# ~ print(' '*4+dat)
-# ~ for row in np.array(eval(rutas_key),dtype=int):
-	# ~ print(' '*6+repr(row.tolist()))
-
-# ~ print(n_s)
-# ~ print('  '+str(n_p))
-# ~ dat=' '.join(map(str,rutas_exploradas[str(n_s)][str(n_p)][rutas_key][buzones_key]['default']))
-# ~ print(' '*4+dat)
-# ~ for row in np.array(eval(rutas_key),dtype=int):
-	# ~ print(' '*6+repr(row.tolist()))
-
-# ~ for n_s in rutas_exploradas.keys():
-	# ~ print(n_s)
-	# ~ for n_p in rutas_exploradas[n_s].keys():
-		# ~ print('  '+n_p)
-		# ~ for rut in rutas_exploradas[n_s][n_p].keys():
-			# ~ dat=' '.join(map(str,rutas_exploradas[n_s][n_p][rut]['default']))
-			# ~ print(' '*4+dat)
-			# ~ for row in np.array(eval(rut),dtype=int):
-				# ~ print(' '*6+repr(row.tolist()))
