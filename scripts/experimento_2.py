@@ -165,7 +165,7 @@ with open(exp_id,'r',encoding='utf-8') as f:
 # mientras N < N_min
 while len(exp_dict) < N_min:
 	# agregar una corrida
-    exp_dict = agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver, data_dir=data_dir)
+	exp_dict = agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver, data_dir=data_dir)
 	# guardar dict
 	with open(exp_id,'w',encoding='utf-8') as f:
 		json.dump(exp_dict,f,indent=2)
@@ -178,7 +178,7 @@ print(f"{delta_std = }")
 # mientras delta_std > 0.01 y N < N_max
 while delta_std > 0.01 and len(exp_dict) < N_max:
 	# agregar una corrida
-    exp_dict = agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver, data_dir=data_dir)
+	exp_dict = agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver, data_dir=data_dir)
 	# guardar dict
 	with open(exp_id,'w',encoding='utf-8') as f:
 		json.dump(exp_dict,f,indent=2)
