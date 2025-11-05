@@ -126,7 +126,7 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
     if '_meta' not in exp_dict:
         exp_dict['_meta'] = {"total_runtime_seconds": 0.0}
     # generar semilla
-    rand_seed = len(exp_dict)
+    rand_seed = len(exp_dict)-1
     exp_dict[str(rand_seed)] = {}
     seed_runtime = 0.0
     # generar perfiles aleatorios
@@ -206,6 +206,7 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
 
 
 def calcula_delta_std(exp_dict):
+    import pdb; pdb.set_trace()
     # Get actual seed keys, excluding _meta
     seed_keys = [k for k in exp_dict.keys() if k != '_meta']
     N_seeds = len(seed_keys)
@@ -225,7 +226,7 @@ def calcula_delta_std(exp_dict):
                         # Skip if structure is incomplete for this seed
                         continue
                 # Need at least 2 data points to calculate delta_std
-                if len(costos_totales) < 2:
+                if len(costos_totales) < 3:
                     continue
                 # calcular las std
                 std_total_last = np.std(costos_totales)
