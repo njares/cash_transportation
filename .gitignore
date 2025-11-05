@@ -4,6 +4,7 @@
 
 # Generated data and artifacts
 data/generated/**
+!data/generated/.gitkeep
 artifacts/solutions/**
 artifacts/logs/**
 artifacts/metadata/**

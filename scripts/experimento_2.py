@@ -24,7 +24,7 @@ parser.add_argument("--n-max", type=int, default=0, help="máximo de iteraciones
 parser.add_argument("--solver", type=str, default="HiGHS", help="solver a utilizar (ej. HiGHS, fscip)")
 parser.add_argument("--collection-mult", type=float, default=1.0, help="multiplicador de recaudación total")
 parser.add_argument("--exp-id", type=str, default="exp_test.json", help="archivo JSON del experimento (nombre simple se guarda en experiments/runs)")
-parser.add_argument("--data-dir", type=str, default="./data/", help="directorio donde escribir CSVs de entrada generados")
+parser.add_argument("--data-dir", type=str, default="./data/generated/", help="directorio donde escribir CSVs de entrada generados")
 args = parser.parse_args()
 
 n_thr = args.threads
@@ -131,6 +131,7 @@ collections_profiles = [collections_constant,collections_V]
 std_profiles = [constant_std, V_std]
 
 data_dir = args.data_dir
+os.makedirs(data_dir, exist_ok=True)
 
 # Dias habiles por ruta
 habiles_csv_path = os.path.join(data_dir, "habiles.csv")
@@ -164,7 +165,7 @@ with open(exp_id,'r',encoding='utf-8') as f:
 # mientras N < N_min
 while len(exp_dict) < N_min:
 	# agregar una corrida
-	exp_dict = agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver)
+    exp_dict = agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver, data_dir=data_dir)
 	# guardar dict
 	with open(exp_id,'w',encoding='utf-8') as f:
 		json.dump(exp_dict,f,indent=2)
@@ -177,7 +178,7 @@ print(f"{delta_std = }")
 # mientras delta_std > 0.01 y N < N_max
 while delta_std > 0.01 and len(exp_dict) < N_max:
 	# agregar una corrida
-	exp_dict = agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver)
+    exp_dict = agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver, data_dir=data_dir)
 	# guardar dict
 	with open(exp_id,'w',encoding='utf-8') as f:
 		json.dump(exp_dict,f,indent=2)

@@ -15,8 +15,8 @@ def calculo_recaudaciones(prop_suc, collections, e_zero, buzones):
     return collections, e_zero, buzones
 
 
-def calculo_ganancia(business_days, rutas, costos_rutas, interes, prop_suc, collections, e_zero, buzones, n_thr=4, solver='cbc', debug=False):
-    data_dir = './data/'
+def calculo_ganancia(business_days, rutas, costos_rutas, interes, prop_suc, collections, e_zero, buzones, n_thr=4, solver='cbc', debug=False, data_dir: str = './data/generated/'):
+    os.makedirs(data_dir, exist_ok=True)
 
     # Dias habiles por ruta
     habiles_csv_path = os.path.join(data_dir, "habiles.csv")
@@ -117,8 +117,8 @@ def generar_escenarios(n_s, n_p, n):
     return escenarios
 
 
-def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver, debug=False):
-    data_dir = './data/'
+def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver, debug=False, data_dir: str = './data/generated/'):
+    os.makedirs(data_dir, exist_ok=True)
     rutas_csv_path = os.path.join(data_dir, "rutas.csv")
     costo_rutas_csv_path = os.path.join(data_dir, "costo_rutas.csv")
     habiles_csv_path = os.path.join(data_dir, "habiles.csv")

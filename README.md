@@ -16,7 +16,7 @@ python scripts/experimento_2.py [opciones]
 - `--solver STR` (por defecto: cbc): solver a utilizar (ej.: `cbc`, `HiGHS`, `fscip`).
 - `--collection-mult FLOAT` (por defecto: 1.0): multiplicador de recaudación total.
 - `--exp-id STR` (por defecto: `exp_test.json`): archivo JSON del experimento a leer/escribir.
-- `--data-dir PATH` (por defecto: `../data/generated/`): directorio donde escribir los CSVs generados (`habiles.csv`, `rutas.csv`, `costo_rutas.csv`).
+- `--data-dir PATH` (por defecto: `./data/generated/`): directorio donde escribir los CSVs generados (`habiles.csv`, `rutas.csv`, `costo_rutas.csv`). El repo mantiene la carpeta con un `.gitkeep`, pero ignora sus contenidos.
 
 ### Ejemplos
 
