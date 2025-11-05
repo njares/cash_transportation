@@ -63,4 +63,43 @@ Notas:
 - El umbral de `delta_std` se mantiene fijo en el código (no parametrizado).
 - Más adelante se podrá agregar `--log-file` si se necesita persistir la salida.
 
+## Tabla de Resumen de Experimentos
+
+`scripts/tabla_exp_1.py` genera tablas resumen con estadísticas (mean ± std) de experimentos.
+
+### Uso básico
+
+```bash
+python scripts/tabla_exp_1.py [opciones]
+```
+
+### Opciones
+
+- `--exp-id STR` (por defecto: `exp_test.json`): archivo JSON del experimento a procesar. Si es solo un nombre (sin ruta), se busca en `experiments/runs/`.
+- `--output PATH` (opcional): archivo de texto donde escribir las tablas. Por defecto imprime a stdout. Si no se especifica pero se usa `--ods`, se genera automáticamente en `artifacts/reports/tabla_<exp-id>.txt`.
+- `--ods PATH` (opcional): ruta del archivo ODS a generar. Requiere `odfpy` (instalar con `pip install odfpy`). Si no se especifica pero se usa `--output`, se puede generar automáticamente en `artifacts/reports/tabla_<exp-id>.ods`.
+- `--output-dir PATH` (opcional): directorio donde guardar archivos. Por defecto: `artifacts/reports/`.
+
+### Ejemplos
+
+Imprimir a stdout:
+```bash
+python scripts/tabla_exp_1.py --exp-id exp_gurobi_durga_full_2025_11_5.json
+```
+
+Generar archivo de texto automáticamente:
+```bash
+python scripts/tabla_exp_1.py --exp-id exp_gurobi_durga_full_2025_11_5.json --output
+```
+
+Generar archivo de texto y ODS:
+```bash
+python scripts/tabla_exp_1.py --exp-id exp_gurobi_durga_full_2025_11_5.json --output --ods
+```
+
+El script genera tablas para cada perfil ("constant" y "V") con:
+- Costos logísticos, financieros y totales para casos logísticos y financieros
+- Ganancia (porcentaje de reducción de costo)
+- Estadísticas: media ± desviación estándar
+
 
