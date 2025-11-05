@@ -122,9 +122,13 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
     rutas_csv_path = os.path.join(data_dir, "rutas.csv")
     costo_rutas_csv_path = os.path.join(data_dir, "costo_rutas.csv")
     habiles_csv_path = os.path.join(data_dir, "habiles.csv")
+    # ensure meta container for cumulative timing
+    if '_meta' not in exp_dict:
+        exp_dict['_meta'] = {"total_runtime_seconds": 0.0}
     # generar semilla
     rand_seed = len(exp_dict)
     exp_dict[str(rand_seed)] = {}
+    seed_runtime = 0.0
     # generar perfiles aleatorios
     rng = np.random.default_rng(seed=rand_seed)
     profiles_names = ["constant", "V"]
@@ -172,6 +176,7 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
                 )
                 tiempo = time.time()-start
                 print(f"t={tiempo:.2f}")
+                seed_runtime += tiempo
                 try:
                     # Calcular costo total
                     costo_total = sum([prob.objective.value() for prob in Problems])
@@ -190,6 +195,13 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
                     import pdb; pdb.set_trace()
                     return -1
                 exp_dict[str(rand_seed)][name][str(interes_anual)][str(b)] = [costo_total, costo_financiero]
+    # store per-seed runtime and update global meta
+    exp_dict[str(rand_seed)]['_runtime_seconds'] = seed_runtime
+    try:
+        exp_dict['_meta']['total_runtime_seconds'] += seed_runtime
+    except Exception:
+        # if meta was somehow corrupted, reset it safely
+        exp_dict['_meta'] = {"total_runtime_seconds": seed_runtime}
     return exp_dict
 
 

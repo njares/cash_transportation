@@ -46,6 +46,10 @@ python scripts/experimento_2.py --exp-id exp_2025-10-23-01.json
 
 Si `--exp-id` es solo un nombre (sin ruta), el archivo se crea/leé automáticamente en `experiments/runs/`. Si no existe, se crea con `{}`.
 
+Además, el JSON mantiene tiempos de ejecución:
+- En `['_meta']['total_runtime_seconds']`: tiempo acumulado total de todas las corridas agregadas.
+- En `['<seed>']['_runtime_seconds']`: tiempo total invertido para esa seed.
+
 ### Recomendado: ejecutar con el paquete instalado en modo editable
 
 ```bash

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cash-transportation"
 version = "0.1.0"
-description = "Optimization tooling for cash transportation"
+description = "Cash transportation under inflation"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -16,5 +16,3 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-

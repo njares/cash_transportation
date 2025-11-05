@@ -17,7 +17,5 @@ Thumbs.db
 .vscode/
 .idea/
 venv
-*.pyc
-.DS_Store
 .env
 *.~lock*
