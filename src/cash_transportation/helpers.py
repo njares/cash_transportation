@@ -206,15 +206,27 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
 
 
 def calcula_delta_std(exp_dict):
-    N_seeds = len(exp_dict)
+    # Get actual seed keys, excluding _meta
+    seed_keys = [k for k in exp_dict.keys() if k != '_meta']
+    N_seeds = len(seed_keys)
     delta_std = 0.0  # quiero la máxima delta_std
     # para cada exp_setup
     for perfil in ["constant", "V"]:
         for interes_anual in np.linspace(0, 10, 11):
             for b in range(4):
                 # recorrer las seeds
-                costos_totales = [exp_dict[str(seed)][perfil][str(interes_anual)][str(b)][0] for seed in range(N_seeds)]
-                costos_financi = [exp_dict[str(seed)][perfil][str(interes_anual)][str(b)][1] for seed in range(N_seeds)]
+                costos_totales = []
+                costos_financi = []
+                for seed_key in seed_keys:
+                    try:
+                        costos_totales.append(exp_dict[seed_key][perfil][str(interes_anual)][str(b)][0])
+                        costos_financi.append(exp_dict[seed_key][perfil][str(interes_anual)][str(b)][1])
+                    except (KeyError, IndexError):
+                        # Skip if structure is incomplete for this seed
+                        continue
+                # Need at least 2 data points to calculate delta_std
+                if len(costos_totales) < 2:
+                    continue
                 # calcular las std
                 std_total_last = np.std(costos_totales)
                 std_finan_last = np.std(costos_financi)
