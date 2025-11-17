@@ -46,13 +46,21 @@ def ver_fila(fila, output_file=None):
     
     # Formatear cada par de valores (mean, std) como dos columnas separadas por coma
     values = []
-    for i in range(14):
-        mean_val = 1e3 * fila[i*2]
-        std_val = 1e3 * fila[i*2+1]
+    
+    # Añadir buzon y interes (primera fila de cada grupo)
+    buzon = int(fila[0])  # buzon está en la posición 0
+    interes = fila[1]     # interes está en la posición 1
+    values.append(str(buzon))
+    values.append(f"{interes:.1f}")
+    
+    # Añadir las 14 estadísticas (7 pares de mean/std)
+    for i in range(2, 28, 2):  # desde posición 2 hasta 28, de 2 en 2
+        mean_val = 1e3 * fila[i]
+        std_val = 1e3 * fila[i+1]
         values.append(f"{mean_val:.2G}")
         values.append(f"{std_val:.2G}")
     
-    # Añadir la ganancia como porcentaje
+    # Añadir la ganancia como porcentaje (últimas 2 columnas)
     ganancia_mean = 100 * fila[26]
     ganancia_std = 100 * fila[27]
     values.append(f"{ganancia_mean:.2G}")
@@ -119,7 +127,7 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
     
     # 2 tablas (una por perfil)
     # 40 filas (4 buzones × 10 intereses)
-    # 28 columnas (14 pares mean±std, cada uno en 2 columnas)
+    # 16 columnas (buzon, interes, 7 estadísticas con 2 columnas cada una)
     for perfil in ["constant", "V"]:
         # Tabla vacía
         tabla = np.zeros((40, 28))
@@ -142,8 +150,10 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 
                 mean = np.mean(costos_logisticos_logistico)
                 std = np.std(costos_logisticos_logistico)
-                tabla[cur_fila, 0] = mean
-                tabla[cur_fila, 1] = std
+                tabla[cur_fila, 0] = buzon  # buzon
+                tabla[cur_fila, 1] = interes_anual  # interes
+                tabla[cur_fila, 2] = mean
+                tabla[cur_fila, 3] = std
                 
                 # costo financiero
                 costos_financieros_logistico = []
@@ -155,15 +165,15 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 
                 mean = np.mean(costos_financieros_logistico)
                 std = np.std(costos_financieros_logistico)
-                tabla[cur_fila, 2] = mean
-                tabla[cur_fila, 3] = std
+                tabla[cur_fila, 4] = mean
+                tabla[cur_fila, 5] = std
                 
                 # costo total
                 costos_total_logistico = [c_log + c_fin for c_log, c_fin in zip(costos_logisticos_logistico, costos_financieros_logistico)]
                 mean = np.mean(costos_total_logistico)
                 std = np.std(costos_total_logistico)
-                tabla[cur_fila, 4] = mean
-                tabla[cur_fila, 5] = std
+                tabla[cur_fila, 6] = mean
+                tabla[cur_fila, 7] = std
                 
                 # caso financiero
                 # costo financiero
