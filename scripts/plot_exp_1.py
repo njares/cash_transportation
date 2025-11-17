@@ -20,26 +20,34 @@ def plot_ganancias(profile, tabla_df, output_file=None):
         output_file: Ruta donde guardar la imagen (opcional)
     """
     df_list = []
-    df_list.append(tabla_df[tabla_df["buzon"] == "0"]["interes"].astype(float))
-    for b_idx in range(5):
-        plot_df["mean_"+str(b_idx)] = tabla_df[tabla_df["buzon"] == str(b_idx)]["ganancia_mean"].astype(float)
-        plot_df["std_"+str(b_idx)] = tabla_df[tabla_df["buzon"] == str(b_idx)]["ganancia_std"].astype(float)
-    
-    plot_df = pd.DataFrame()
-    #plot_df.columns = ["interes"]
+    buzones = tabla_df["buzon"].unique()
+    buzones.sort()
+    for b_idx in buzones:
+        df_list.append(
+            tabla_df.loc[tabla_df["buzon"].eq(b_idx)].iloc[
+                :, ["ganancia_mean", "ganancia_std"]
+            ].reset_index(drop=True)
+        )
+
+    df_final = pd.concat(df_list, axis=1)
+    cols = []
+    for b_idx in buzones:
+        cols.append("mean_"+str(b_idx))
+        cols.append("std_"+str(b_idx))
+    df_final.columns = cols
+
+    df_final["interes"] = list(range(1, 11))
     
     # Define the columns to plot and their corresponding error columns
     value_cols = ['mean_0', 'mean_1', 'mean_2', 'mean_3', 'mean_4']
     error_cols = ['std_0', 'std_1', 'std_2', 'std_3', 'std_4']
     labels = ['Capacity 1', 'Capacity 3/4', 'Capacity 1/2', 'Capacity 1/3', 'Capacity 1/4']
-    
-    import pdb; pdb.set_trace()
-    
+
     for i, col in enumerate(value_cols):
         plt.errorbar(
-            plot_df['interes'],
-            plot_df[col],
-            yerr=plot_df[error_cols[i]],
+            df_final['interes'],
+            df_final[col],
+            yerr=df_final[error_cols[i]],
             fmt='-o', # Format: line with circles
             label=labels[i], # Label for legend
             capsize=4 # Size of the error bar caps
@@ -102,13 +110,15 @@ def main():
             output_path = os.path.join(output_dir, f"ganancias_{base_name}.png")
         
         # parse txt file
-        profiles, tablas_df = parse_txt(args.csv_file)
+        # profiles, tablas_df = parse_txt(args.csv_file)
         
-        # Generar los gráficos
-        for profile, tabla_df in zip(profiles, tablas_df):
-            #plot_ganancias(profile, tabla_df, output_path)
-            plot_ganancias(profile, tabla_df, "")
-        
+        # # Generar los gráficos
+        # for profile, tabla_df in zip(profiles, tablas_df):
+        #     #plot_ganancias(profile, tabla_df, output_path)
+        #     plot_ganancias(profile, tabla_df, "")
+        tabla_df = pd.read_csv(args.csv_file)
+        plot_ganancias("constante", tabla_df)
+
     except Exception as e:
         print(f"Error procesando archivo: {e}", file=sys.stderr)
         import traceback
