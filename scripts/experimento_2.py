@@ -115,7 +115,8 @@ collections_constant = np.tile(collections_profile_constant,(n_s,1))*COLLECTION_
 # ver varianza_diaria.py
 #constant_std = 0.025
 #constant_std = (1/30)*.525
-constant_std = collections_profile_constant[0]*.525*COLLECTION_MULT
+#constant_std = collections_profile_constant[0]*.525*COLLECTION_MULT
+constant_std = .525
 
 collections_profile_V = np.hstack([np.linspace(1,2,10,endpoint=False),np.linspace(2,1,20,endpoint=False)])
 collections_profile_V = collections_profile_V*np.array(dias_habiles_profile)
@@ -125,7 +126,8 @@ collections_V = np.tile(collections_profile_V,(n_s,1))*COLLECTION_MULT
 # ver varianza diaria.py
 #V_std = 0.01640
 #V_std = (1/30)*.3444
-V_std = collections_profile_constant[0]*.3444*COLLECTION_MULT
+#V_std = collections_profile_constant[0]*.3444*COLLECTION_MULT
+V_std = .3444
 
 collections_profiles = [collections_constant,collections_V]
 std_profiles = [constant_std, V_std]

@@ -137,12 +137,11 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
         #n_p,_ = rutas.shape
         n_p = 8
         e_zero = collections[:, 0]
-        rand_collect = rng.normal(loc=0.0, scale=std, size=collections.shape)
-        rand_e_zero = rng.normal(loc=0, scale=std, size=e_zero.shape)
-        # la std constante es 52% de la recaudación diaria
-        # 1.9 asegura no tener recaudaciones negativas
-        rand_collect = np.clip(rand_collect, -1.9*std, 1.9*std)
-        rand_e_zero = np.clip(rand_e_zero, -1.9*std, 1.9*std)
+        mu = e_zero[0]
+        alpha = 1/(std**2)
+        theta = mu/alpha
+        rand_collect = rng.gamma(alpha, theta, size=collections.shape) - mu
+        rand_e_zero = rng.gamma(alpha, theta, size=e_zero.shape) - mu
         collections = collections + rand_collect
         e_zero = e_zero + rand_e_zero
         e_zero = pd.DataFrame(e_zero)
