@@ -10,51 +10,46 @@ import pandas as pd
 import numpy as np
 
 
-def plot_ganancias(csv_file, output_file=None):
+def plot_ganancias(profile, tabla_df, output_file=None):
     """
-    Lee un archivo CSV y genera un gráfico de ganancias.
+    Lee un DataFrame y genera un gráfico de ganancias.
     
     Args:
-        csv_file: Ruta al archivo CSV
+        profile: nombre del perfil
+        tabla_df: DataFrame listo
         output_file: Ruta donde guardar la imagen (opcional)
     """
-    # Leer el archivo CSV
-    df = pd.read_csv(csv_file)
+    df_list = []
+    df_list.append(tabla_df[tabla_df["buzon"] == "0"]["interes"].astype(float))
+    for b_idx in range(5):
+        plot_df["mean_"+str(b_idx)] = tabla_df[tabla_df["buzon"] == str(b_idx)]["ganancia_mean"].astype(float)
+        plot_df["std_"+str(b_idx)] = tabla_df[tabla_df["buzon"] == str(b_idx)]["ganancia_std"].astype(float)
     
-    # Extraer los datos necesarios
-    buzones = df['buzon'].unique()
-    intereses = df['interes'].unique()
+    plot_df = pd.DataFrame()
+    #plot_df.columns = ["interes"]
     
-    # Crear la figura
-    fig, ax = plt.subplots(figsize=(10, 6))
+    # Define the columns to plot and their corresponding error columns
+    value_cols = ['mean_0', 'mean_1', 'mean_2', 'mean_3', 'mean_4']
+    error_cols = ['std_0', 'std_1', 'std_2', 'std_3', 'std_4']
+    labels = ['Capacity 1', 'Capacity 3/4', 'Capacity 1/2', 'Capacity 1/3', 'Capacity 1/4']
     
-    # Plot para cada buzón
-    for buzon in buzones:
-        data_buzon = df[df['buzon'] == buzon]
-        # Ordenar por interés
-        data_buzon = data_buzon.sort_values('interes')
-        
-        # Extraer ganancias (últimas dos columnas)
-        ganancia_mean = data_buzon['ganancia_mean']
-        ganancia_std = data_buzon['ganancia_std']
-        
-        # Convertir a porcentaje
-        ganancia_mean = ganancia_mean * 100
-        ganancia_std = ganancia_std * 100
-        
-        # Plot
-        ax.errorbar(data_buzon['interes'], ganancia_mean, yerr=ganancia_std, 
-                   marker='o', label=f'Buzón {buzon}', capsize=3)
+    import pdb; pdb.set_trace()
     
-    # Configurar el gráfico
-    ax.set_xlabel('Interés Anual (%)')
-    ax.set_ylabel('Ganancia (%)')
-    ax.set_title('Comparación de Ganancias por Buzón e Interés')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
+    for i, col in enumerate(value_cols):
+        plt.errorbar(
+            plot_df['interes'],
+            plot_df[col],
+            yerr=plot_df[error_cols[i]],
+            fmt='-o', # Format: line with circles
+            label=labels[i], # Label for legend
+            capsize=4 # Size of the error bar caps
+        )
     
-    # Ajustar el diseño
-    plt.tight_layout()
+    plt.xlabel('I')
+    plt.ylabel('Percentage')
+    plt.title('Gain with a constant collection profile')
+    plt.legend()
+    plt.grid(True)
     
     # Guardar si se especificó un archivo de salida
     if output_file:
@@ -106,14 +101,36 @@ def main():
             base_name = os.path.splitext(os.path.basename(args.csv_file))[0]
             output_path = os.path.join(output_dir, f"ganancias_{base_name}.png")
         
-        # Generar el gráfico
-        plot_ganancias(args.csv_file, output_path)
+        # parse txt file
+        profiles, tablas_df = parse_txt(args.csv_file)
+        
+        # Generar los gráficos
+        for profile, tabla_df in zip(profiles, tablas_df):
+            #plot_ganancias(profile, tabla_df, output_path)
+            plot_ganancias(profile, tabla_df, "")
         
     except Exception as e:
         print(f"Error procesando archivo: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         sys.exit(1)
+
+def parse_txt(csv_file):
+    with open(csv_file, "r") as file:
+        lines = file.readlines()
+    profiles = []
+    tablas_df = []
+    # Tabla constante
+    profiles.append(lines[0][:-1])
+    tabla = pd.DataFrame([l[:-1].split(",") for l in lines[2:52]])
+    tabla.columns = lines[1][:-1].split(",")
+    tablas_df.append(tabla)
+    # Tabla V
+    profiles.append(lines[52][:-1])
+    tabla = pd.DataFrame([l[:-1].split(",") for l in lines[54:]])
+    tabla.columns = lines[53][:-1].split(",")
+    tablas_df.append(tabla)
+    return profiles, tablas_df
 
 
 if __name__ == "__main__":
