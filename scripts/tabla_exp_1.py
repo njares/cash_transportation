@@ -30,9 +30,9 @@ def ver_fila(fila, output_file=None):
         else:
             print(s, end='')
     
-    for i in range(6):
-        _print(f"{1e3*fila[i*2]:8.2G} ± {1e3*fila[i*2+1]:8.2G} | ")
-    _print(f"{100*fila[12]:8.2G} ± {100*fila[13]:8.2G} %")
+    for i in range(14):
+        _print(f"{1e3*fila[i*2]:8.2G} | {1e3*fila[i*2+1]:8.2G} | ")
+    _print(f"{100*fila[26]:8.2G} | {100*fila[27]:8.2G} %")
 
 
 def parse_experiment(exp_id):
@@ -93,10 +93,10 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
     
     # 2 tablas (una por perfil)
     # 40 filas (4 buzones × 10 intereses)
-    # 14 columnas (7 pares mean±std)
+    # 28 columnas (14 pares mean±std, cada uno en 2 columnas)
     for perfil in ["constant", "V"]:
         # Tabla vacía
-        tabla = np.zeros((40, 14))
+        tabla = np.zeros((40, 28))
         for buzon in range(4):
             for interes_anual in np.linspace(1, 10, 10):
                 cur_fila = int(buzon*10 + (interes_anual-1))
@@ -150,8 +150,8 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 
                 mean = np.mean(costos_financieros_financiero)
                 std = np.std(costos_financieros_financiero)
-                tabla[cur_fila, 8] = mean
-                tabla[cur_fila, 9] = std
+                tabla[cur_fila, 16] = mean
+                tabla[cur_fila, 17] = std
                 
                 # costo total
                 costos_total_financiero = []
@@ -163,22 +163,22 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 
                 mean = np.mean(costos_total_financiero)
                 std = np.std(costos_total_financiero)
-                tabla[cur_fila, 10] = mean
-                tabla[cur_fila, 11] = std
+                tabla[cur_fila, 18] = mean
+                tabla[cur_fila, 19] = std
                 
                 # costo logístico
                 costos_logistico_financiero = [c_tot - c_fin for c_tot, c_fin in zip(costos_total_financiero, costos_financieros_financiero)]
                 mean = np.mean(costos_logistico_financiero)
                 std = np.std(costos_logistico_financiero)
-                tabla[cur_fila, 6] = mean
-                tabla[cur_fila, 7] = std
+                tabla[cur_fila, 14] = mean
+                tabla[cur_fila, 15] = std
                 
                 # ganancia
                 ganancias = [(c_log - c_fin) / c_log for c_log, c_fin in zip(costos_total_logistico, costos_total_financiero)]
                 mean = np.mean(ganancias)
                 std = np.std(ganancias)
-                tabla[cur_fila, 12] = mean
-                tabla[cur_fila, 13] = std
+                tabla[cur_fila, 26] = mean
+                tabla[cur_fila, 27] = std
         
         tables_data[perfil] = tabla
         _print(perfil)
@@ -249,16 +249,21 @@ def generate_ods(tables_data, ods_file):
                 cell.addElement(P(text=f"{interes_anual:.1f}"))
                 row.addElement(cell)
                 
-                # Add data cells (mean ± std pairs)
-                for col_idx in range(0, 14, 2):
+                # Add data cells (mean and std in separate columns)
+                for col_idx in range(0, 28, 2):
                     mean_val = tabla[cur_fila, col_idx]
                     std_val = tabla[cur_fila, col_idx + 1]
-                    if col_idx == 12:  # ganancia (percentage)
-                        text = f"{100*mean_val:.2f} ± {100*std_val:.2f} %"
+                    if col_idx == 26:  # ganancia (percentage)
+                        text_mean = f"{100*mean_val:.2f}"
+                        text_std = f"{100*std_val:.2f}"
                     else:
-                        text = f"{1e3*mean_val:.2G} ± {1e3*std_val:.2G}"
+                        text_mean = f"{1e3*mean_val:.2G}"
+                        text_std = f"{1e3*std_val:.2G}"
                     cell = TableCell()
-                    cell.addElement(P(text=text))
+                    cell.addElement(P(text=text_mean))
+                    row.addElement(cell)
+                    cell = TableCell()
+                    cell.addElement(P(text=text_std))
                     row.addElement(cell)
                 
                 table.addElement(row)
@@ -371,4 +376,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
