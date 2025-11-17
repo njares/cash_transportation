@@ -13,10 +13,15 @@ python scripts/experimento_2.py [opciones]
 - `--threads INT` (por defecto: 8): cantidad de hilos.
 - `--n-min INT` (por defecto: 1): mínimo de iteraciones por escenario.
 - `--n-max INT` (por defecto: 0): máximo de iteraciones por escenario (0 = sin tope).
-- `--solver STR` (por defecto: cbc): solver a utilizar (ej.: `cbc`, `HiGHS`, `fscip`).
+- `--solver STR` (por defecto: HiGHS): solver a utilizar (ej.: `cbc`, `HiGHS`, `fscip`).
 - `--collection-mult FLOAT` (por defecto: 1.0): multiplicador de recaudación total.
 - `--exp-id STR` (por defecto: `exp_test.json`): archivo JSON del experimento a leer/escribir.
 - `--data-dir PATH` (por defecto: `./data/generated/`): directorio donde escribir los CSVs generados (`habiles.csv`, `rutas.csv`, `costo_rutas.csv`). El repo mantiene la carpeta con un `.gitkeep`, pero ignora sus contenidos.
+- `--V-profile-max FLOAT` (por defecto: 2.0): Cuánto más grande es la recaudación máxima respecto a la mínima en el perfil V.
+- `--V-max-day INT` (por defecto: 10): Qué día se realiza la máxima recaudación.
+- `--route-cost-mult FLOAT` (por defecto: 1.5e-3): Multiplicador de costo de rutas.
+- `--C-std FLOAT` (por defecto: .525): Desviación estándar perfil constante.
+- `--V-std FLOAT` (por defecto: .3444): Desviación estándar perfil V.
 
 ### Ejemplos
 
@@ -62,6 +67,9 @@ Alternativamente, el script añade `src/` al `PYTHONPATH` automáticamente, por 
 Notas:
 - El umbral de `delta_std` se mantiene fijo en el código (no parametrizado).
 - Más adelante se podrá agregar `--log-file` si se necesita persistir la salida.
+- El perfil V ahora permite configurar la máxima recaudación y el día de pico.
+- El costo de rutas ahora es configurable mediante `--route-cost-mult`.
+- Las desviaciones estándar de los perfiles constantes y V ahora son configurables mediante `--C-std` y `--V-std`.
 
 ## Tabla de Resumen de Experimentos
 
@@ -101,5 +109,4 @@ El script genera tablas para cada perfil ("constant" y "V") con:
 - Costos logísticos, financieros y totales para casos logísticos y financieros
 - Ganancia (porcentaje de reducción de costo)
 - Estadísticas: media ± desviación estándar
-
-
+```
