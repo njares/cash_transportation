@@ -54,7 +54,7 @@ def ver_fila(fila, output_file=None):
     values.append(f"{interes:.1f}")
     
     # Añadir las 14 estadísticas (7 pares de mean/std)
-    for i in range(2, 14, 2):  # desde posición 2 hasta 16, de 2 en 2
+    for i in range(2, 14, 2):  # desde posición 2 hasta 14, de 2 en 2
         mean_val = 1e3 * fila[i]
         std_val = 1e3 * fila[i+1]
         values.append(f"{mean_val:.2G}")
@@ -126,14 +126,16 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
     tables_data = {}
     
     # 2 tablas (una por perfil)
-    # 40 filas (4 buzones × 10 intereses)
+    # 50 filas (5 buzones × 10 intereses)
     # 16 columnas (buzon, interes, 7 estadísticas con 2 columnas cada una)
     for perfil in ["constant", "V"]:
         # Tabla vacía
-        tabla = np.zeros((40, 16))
-        for buzon in range(4):
+        tabla = np.zeros((50, 16))
+        # Tamaños de buzones nuevos: [1, 3/4, 1/2, 1/3, 1/4]
+        buzones_sizes = [1, 3/4, 1/2, 1/3, 1/4]
+        for buzon_idx, buzon_size in enumerate(buzones_sizes):
             for interes_anual in np.linspace(1, 10, 10):
-                cur_fila = int(buzon*10 + (interes_anual-1))
+                cur_fila = int(buzon_idx*10 + (interes_anual-1))
                 interes = (1+interes_anual/100)**(1/365)-1
                 
                 # caso logístico
@@ -141,7 +143,7 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 costos_logisticos_logistico = []
                 for seed in seed_keys:
                     try:
-                        costos_logisticos_logistico.append(exp_dict[seed][perfil]['0.0'][str(buzon)][0])
+                        costos_logisticos_logistico.append(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][0])
                     except (KeyError, IndexError):
                         continue
                 
@@ -150,7 +152,7 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 
                 mean = np.mean(costos_logisticos_logistico)
                 std = np.std(costos_logisticos_logistico)
-                tabla[cur_fila, 0] = buzon  # buzon
+                tabla[cur_fila, 0] = buzon_idx  # buzon
                 tabla[cur_fila, 1] = interes_anual  # interes
                 tabla[cur_fila, 2] = mean
                 tabla[cur_fila, 3] = std
@@ -159,7 +161,7 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 costos_financieros_logistico = []
                 for seed in seed_keys:
                     try:
-                        costos_financieros_logistico.append(exp_dict[seed][perfil]['0.0'][str(buzon)][1]*interes)
+                        costos_financieros_logistico.append(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][1]*interes)
                     except (KeyError, IndexError):
                         continue
                 
@@ -180,7 +182,7 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 costos_financieros_financiero = []
                 for seed in seed_keys:
                     try:
-                        costos_financieros_financiero.append(exp_dict[seed][perfil][str(interes_anual)][str(buzon)][1]*interes)
+                        costos_financieros_financiero.append(exp_dict[seed][perfil][str(interes_anual)][str(buzon_idx)][1]*interes)
                     except (KeyError, IndexError):
                         continue
                 
@@ -193,7 +195,7 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 costos_total_financiero = []
                 for seed in seed_keys:
                     try:
-                        costos_total_financiero.append(exp_dict[seed][perfil][str(interes_anual)][str(buzon)][0])
+                        costos_total_financiero.append(exp_dict[seed][perfil][str(interes_anual)][str(buzon_idx)][0])
                     except (KeyError, IndexError):
                         continue
                 
@@ -253,6 +255,9 @@ def generate_ods(tables_data, ods_file):
     center_style = Style(name="Center", family="table-cell")
     doc.automaticstyles.addElement(center_style)
     
+    # Tamaños de buzones nuevos: [1, 3/4, 1/2, 1/3, 1/4]
+    buzones_sizes = [1, 3/4, 1/2, 1/3, 1/4]
+    
     for perfil, tabla in tables_data.items():
         table = Table(name=perfil)
         
@@ -269,14 +274,14 @@ def generate_ods(tables_data, ods_file):
         table.addElement(header_row)
         
         # Data rows
-        for buzon in range(4):
+        for buzon_idx, buzon_size in enumerate(buzones_sizes):
             for interes_idx, interes_anual in enumerate(np.linspace(1, 10, 10)):
                 row = TableRow()
-                cur_fila = int(buzon*10 + interes_idx)
+                cur_fila = int(buzon_idx*10 + interes_idx)
                 
                 # Buzon label (only on first row per buzón)
                 if interes_idx == 0:
-                    buzon_label = f"1/{buzon+1}" if buzon > 0 else "1"
+                    buzon_label = f"1/{buzon_size}" if buzon_size != 1 else "1"
                 else:
                     buzon_label = ""
                 cell = TableCell()
@@ -376,7 +381,7 @@ def main():
             else:
                 output_path = None
             
-            # Handle --ods: '' (empty string) means auto-generate, non-empty string means use that path
+            # Handle --ods: '' (empty string) means auto-genera, non-empty string means use that path
             if args.ods == '':
                 ods_path = os.path.join(output_dir, f"tabla_{base_name}.ods")
             elif args.ods:
