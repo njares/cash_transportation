@@ -17,6 +17,20 @@ def ver_tabla(tabla, output_file=None):
         else:
             print(s, end='')
     
+    # Imprimir encabezado
+    headers = [
+        "buzon", "interes", 
+        "costo_logistico_mean", "costo_logistico_std",
+        "costo_financiero_mean", "costo_financiero_std",
+        "costo_total_mean", "costo_total_std",
+        "costo_logistico_financiero_mean", "costo_logistico_financiero_std",
+        "costo_financiero_financiero_mean", "costo_financiero_financiero_std",
+        "costo_total_financiero_mean", "costo_total_financiero_std",
+        "ganancia_mean", "ganancia_std"
+    ]
+    _print(','.join(headers))
+    _print('\n')
+    
     for row in tabla:
         ver_fila(row, output_file)
         _print('\n')
@@ -30,9 +44,21 @@ def ver_fila(fila, output_file=None):
         else:
             print(s, end='')
     
+    # Formatear cada par de valores (mean, std) como dos columnas separadas por coma
+    values = []
     for i in range(14):
-        _print(f"{1e3*fila[i*2]:8.2G} | {1e3*fila[i*2+1]:8.2G} | ")
-    _print(f"{100*fila[26]:8.2G} | {100*fila[27]:8.2G} %")
+        mean_val = 1e3 * fila[i*2]
+        std_val = 1e3 * fila[i*2+1]
+        values.append(f"{mean_val:.2G}")
+        values.append(f"{std_val:.2G}")
+    
+    # Añadir la ganancia como porcentaje
+    ganancia_mean = 100 * fila[26]
+    ganancia_std = 100 * fila[27]
+    values.append(f"{ganancia_mean:.2G}")
+    values.append(f"{ganancia_std:.2G}")
+    
+    _print(','.join(values))
 
 
 def parse_experiment(exp_id):
