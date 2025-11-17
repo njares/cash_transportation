@@ -28,6 +28,8 @@ parser.add_argument("--data-dir", type=str, default="./data/generated/", help="d
 parser.add_argument("--V-profile-max", type=float, default=2.0, help="Cuánto más grande es la recaudación máxima respecto a la mínima en el perfil V. Por defecto: 2.0")
 parser.add_argument("--V-max-day", type=int, default=10, help="Qué día se realiza la máxima recaudación. Por defecto: 10")
 parser.add_argument("--route-cost-mult", type=float, default=1.5e-3, help="Multiplicador de costo de rutas. Por defecto: 1.5e-3")
+parser.add_argument("--C-std", type=float, default=.525, help="Desviación estándar perfil constante. Por defecto: .525")
+parser.add_argument("--V-std", type=float, default=.3444, help="Desviación estándar perfil V. Por defecto: .3444")
 args = parser.parse_args()
 
 n_thr = args.threads
@@ -38,6 +40,7 @@ COLLECTION_MULT = args.collection_mult
 exp_id = args.exp_id
 V_profile_max = args.V_profile_max
 V_max_day = args.V_max_day
+route_cost_mult = args.route_cost_mult
 if os.path.sep not in exp_id and not exp_id.startswith('/'):
     # guardar por defecto en experiments/runs si es un nombre simple
     exp_id = os.path.join(_repo_root, 'experiments', 'runs', exp_id)
@@ -97,7 +100,7 @@ costos_rutas = np.array([\
 #		1.5e-03 = (total costo logisticio mensual) / (total recaudacion mensual)
 # (total recaudacion mensual) = 1
 
-costos_rutas = COLLECTION_MULT*costos_rutas * 1.5e-3 / (4 * np.average(costos_rutas))
+costos_rutas = COLLECTION_MULT*costos_rutas * route_cost_mult / (4 * np.average(costos_rutas))
 costos_rutas = pd.DataFrame(costos_rutas)
 
 # días hábiles
@@ -121,7 +124,7 @@ collections_constant = np.tile(collections_profile_constant,(n_s,1))*COLLECTION_
 #constant_std = 0.025
 #constant_std = (1/30)*.525
 #constant_std = collections_profile_constant[0]*.525*COLLECTION_MULT
-constant_std = .525
+constant_std = args.C_std
 
 collections_profile_V = np.hstack([np.linspace(1,V_profile_max,V_max_day,endpoint=False),np.linspace(V_profile_max,1,30-V_max_day,endpoint=False)])
 collections_profile_V = collections_profile_V*np.array(dias_habiles_profile)
@@ -132,7 +135,7 @@ collections_V = np.tile(collections_profile_V,(n_s,1))*COLLECTION_MULT
 #V_std = 0.01640
 #V_std = (1/30)*.3444
 #V_std = collections_profile_constant[0]*.3444*COLLECTION_MULT
-V_std = .3444
+V_std = args.V_std
 
 collections_profiles = [collections_constant,collections_V]
 std_profiles = [constant_std, V_std]
