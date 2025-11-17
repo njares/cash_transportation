@@ -1,0 +1,4 @@
+python3 cash_transportation/scripts/experimento_2.py --threads 56 --n-min 4 --n-max 150 --solver gurobi --exp-id exp_gurobi_durga_full_2025_11_16.json --V-profile-max 2.0 --V-max-day 10 --route-cost-mult 1.5e-3 --C-std .525 --V-std .3444
+python3 cash_transportation/scripts/experimento_2.py --threads 56 --n-min 4 --n-max 150 --solver gurobi --exp-id exp_max_V_5.json --V-profile-max 5.0 --V-max-day 10 --route-cost-mult 1.5e-3 --C-std .525 --V-std .3444
+python3 cash_transportation/scripts/experimento_2.py --threads 56 --n-min 4 --n-max 150 --solver gurobi --exp-id exp_max_day_20.json --V-profile-max 2.0 --V-max-day 20 --route-cost-mult 1.5e-3 --C-std .525 --V-std .3444
+python3 cash_transportation/scripts/experimento_2.py --threads 56 --n-min 4 --n-max 150 --solver gurobi --exp-id exp_route_cost.json --V-profile-max 2.0 --V-max-day 10 --route-cost-mult 3.0e-3 --C-std .525 --V-std .3444
