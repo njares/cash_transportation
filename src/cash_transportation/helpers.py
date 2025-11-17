@@ -122,6 +122,7 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
     rutas_csv_path = os.path.join(data_dir, "rutas.csv")
     costo_rutas_csv_path = os.path.join(data_dir, "costo_rutas.csv")
     habiles_csv_path = os.path.join(data_dir, "habiles.csv")
+    buzones_sizes = [1, 3/4, 1/2, 1/3, 1/4]
     # ensure meta container for cumulative timing
     if '_meta' not in exp_dict:
         exp_dict['_meta'] = {"total_runtime_seconds": 0.0}
@@ -158,8 +159,8 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
             interes = (1+interes_anual/100)**(1/365)-1
             exp_dict[str(rand_seed)][name][str(interes_anual)] = {}
             #cantidad de recolecciones mensuales
-            for b in range(4):
-                buzones = np.ones(n_s) / (b+1)
+            for b in range(5):
+                buzones = np.ones(n_s)*buzones_sizes[b]
                 buzones = pd.DataFrame(buzones)
                 # Datos de buzones
                 buzones_csv_path = os.path.join(data_dir, "buzon.csv")
