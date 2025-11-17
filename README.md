@@ -109,4 +109,3 @@ El script genera tablas para cada perfil ("constant" y "V") con:
 - Costos logísticos, financieros y totales para casos logísticos y financieros
 - Ganancia (porcentaje de reducción de costo)
 - Estadísticas: media ± desviación estándar
-```
