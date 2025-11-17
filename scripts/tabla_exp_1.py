@@ -54,7 +54,7 @@ def ver_fila(fila, output_file=None):
     values.append(f"{interes:.1f}")
     
     # Añadir las 14 estadísticas (7 pares de mean/std)
-    for i in range(2, 16, 2):  # desde posición 2 hasta 16, de 2 en 2
+    for i in range(2, 14, 2):  # desde posición 2 hasta 16, de 2 en 2
         mean_val = 1e3 * fila[i]
         std_val = 1e3 * fila[i+1]
         values.append(f"{mean_val:.2G}")
@@ -186,8 +186,8 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 
                 mean = np.mean(costos_financieros_financiero)
                 std = np.std(costos_financieros_financiero)
-                tabla[cur_fila, 8] = mean
-                tabla[cur_fila, 9] = std
+                tabla[cur_fila, 10] = mean
+                tabla[cur_fila, 11] = std
                 
                 # costo total
                 costos_total_financiero = []
@@ -199,15 +199,15 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 
                 mean = np.mean(costos_total_financiero)
                 std = np.std(costos_total_financiero)
-                tabla[cur_fila, 10] = mean
-                tabla[cur_fila, 11] = std
+                tabla[cur_fila, 12] = mean
+                tabla[cur_fila, 13] = std
                 
                 # costo logístico
                 costos_logistico_financiero = [c_tot - c_fin for c_tot, c_fin in zip(costos_total_financiero, costos_financieros_financiero)]
                 mean = np.mean(costos_logistico_financiero)
                 std = np.std(costos_logistico_financiero)
-                tabla[cur_fila, 12] = mean
-                tabla[cur_fila, 13] = std
+                tabla[cur_fila, 8] = mean
+                tabla[cur_fila, 9] = std
                 
                 # ganancia
                 ganancias = [(c_log - c_fin) / c_log for c_log, c_fin in zip(costos_total_logistico, costos_total_financiero)]
@@ -260,6 +260,7 @@ def generate_ods(tables_data, ods_file):
         header_row = TableRow()
         headers = ["#B", "I(%)", "costo logístico", "", "costo financiero", "", "costo total", "",
                    "costo logístico", "", "costo financiero", "", "costo total", "", "ganancia (%)", ""]
+        
         for h in headers:
             cell = TableCell()
             cell.addElement(P(text=h))
@@ -286,7 +287,7 @@ def generate_ods(tables_data, ods_file):
                 row.addElement(cell)
                 
                 # Add data cells (mean and std in separate columns)
-                for col_idx in range(0, 16, 2):
+                for col_idx in range(2, 16, 2):
                     mean_val = tabla[cur_fila, col_idx]
                     std_val = tabla[cur_fila, col_idx + 1]
                     if col_idx == 14:  # ganancia (percentage)
