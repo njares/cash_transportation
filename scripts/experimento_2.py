@@ -25,8 +25,9 @@ parser.add_argument("--solver", type=str, default="HiGHS", help="solver a utiliz
 parser.add_argument("--collection-mult", type=float, default=1.0, help="multiplicador de recaudación total")
 parser.add_argument("--exp-id", type=str, default="exp_test.json", help="archivo JSON del experimento (nombre simple se guarda en experiments/runs)")
 parser.add_argument("--data-dir", type=str, default="./data/generated/", help="directorio donde escribir CSVs de entrada generados")
-parser.add_argument("--V-profile-max", type=float, default="2", help="Cuánto más grande es la recaudación máxima respecto a la mínima en el perfil V. Por defecto: 2.0")
-parser.add_argument("--V-max-day", type=int, default="10", help="Qué día se realiza la máxima recaudación. Por defecto: 10")
+parser.add_argument("--V-profile-max", type=float, default=2.0, help="Cuánto más grande es la recaudación máxima respecto a la mínima en el perfil V. Por defecto: 2.0")
+parser.add_argument("--V-max-day", type=int, default=10, help="Qué día se realiza la máxima recaudación. Por defecto: 10")
+parser.add_argument("--route-cost-mult", type=float, default=1.5e-3, help="Multiplicador de costo de rutas. Por defecto: 1.5e-3")
 args = parser.parse_args()
 
 n_thr = args.threads
