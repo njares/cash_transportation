@@ -26,6 +26,7 @@ parser.add_argument("--collection-mult", type=float, default=1.0, help="multipli
 parser.add_argument("--exp-id", type=str, default="exp_test.json", help="archivo JSON del experimento (nombre simple se guarda en experiments/runs)")
 parser.add_argument("--data-dir", type=str, default="./data/generated/", help="directorio donde escribir CSVs de entrada generados")
 parser.add_argument("--V-profile-max", type=float, default="2", help="Cuánto más grande es la recaudación máxima respecto a la mínima en el perfil V. Por defecto: 2.0")
+parser.add_argument("--V-max-day", type=int, default="10", help="Qué día se realiza la máxima recaudación. Por defecto: 10")
 args = parser.parse_args()
 
 n_thr = args.threads
@@ -35,6 +36,7 @@ solver = args.solver
 COLLECTION_MULT = args.collection_mult
 exp_id = args.exp_id
 V_profile_max = args.V_profile_max
+V_max_day = args.V_max_day
 if os.path.sep not in exp_id and not exp_id.startswith('/'):
     # guardar por defecto en experiments/runs si es un nombre simple
     exp_id = os.path.join(_repo_root, 'experiments', 'runs', exp_id)
@@ -120,7 +122,7 @@ collections_constant = np.tile(collections_profile_constant,(n_s,1))*COLLECTION_
 #constant_std = collections_profile_constant[0]*.525*COLLECTION_MULT
 constant_std = .525
 
-collections_profile_V = np.hstack([np.linspace(1,V_profile_max,10,endpoint=False),np.linspace(V_profile_max,1,20,endpoint=False)])
+collections_profile_V = np.hstack([np.linspace(1,V_profile_max,V_max_day,endpoint=False),np.linspace(V_profile_max,1,30-V_max_day,endpoint=False)])
 collections_profile_V = collections_profile_V*np.array(dias_habiles_profile)
 collections_profile_V /= np.sum(collections_profile_V)
 collections_V = np.tile(collections_profile_V,(n_s,1))*COLLECTION_MULT
