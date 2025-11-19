@@ -163,10 +163,10 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
             #cantidad de recolecciones mensuales
             for b in range(5):
                 buzones = np.ones(n_s)*buzones_sizes[b]
-                collections = collections.clip(upper=buzones_sizes[b])
-                e_zero = e_zero.clip(upper=buzones_sizes[b])
-                collections.to_csv(recaudacion_csv_path, header=False, index=False, sep="\t")
-                e_zero.to_csv(e_zero_csv_path, header=False, index=False)
+                collections_clip = collections.clip(lower=0.0, upper=buzones_sizes[b])
+                e_zero_clip = e_zero.clip(lower=0.0, upper=buzones_sizes[b])
+                collections_clip.to_csv(recaudacion_csv_path, header=False, index=False, sep="\t")
+                e_zero_clip.to_csv(e_zero_csv_path, header=False, index=False)
                 buzones = pd.DataFrame(buzones)
                 # Datos de buzones
                 buzones_csv_path = os.path.join(data_dir, "buzon.csv")
