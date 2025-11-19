@@ -154,10 +154,8 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
         # guardar perfiles aleatorios
         # Recaudaciones por sucursal
         recaudacion_csv_path = os.path.join(data_dir, "recaudacion.csv")
-        collections.to_csv(recaudacion_csv_path, header=False, index=False, sep="\t")
         # Recaudacion inicial
         e_zero_csv_path = os.path.join(data_dir, "e0.csv")
-        e_zero.to_csv(e_zero_csv_path, header=False, index=False)
         exp_dict[str(rand_seed)][name] = {}
         for interes_anual in np.linspace(0, 10, 11):
             interes = (1+interes_anual/100)**(1/365)-1
@@ -165,6 +163,10 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
             #cantidad de recolecciones mensuales
             for b in range(5):
                 buzones = np.ones(n_s)*buzones_sizes[b]
+                collections = collections.clip(upper=buzones_sizes[b])
+                e_zero = e_zero.clip(upper=buzones_sizes[b])
+                collections.to_csv(recaudacion_csv_path, header=False, index=False, sep="\t")
+                e_zero.to_csv(e_zero_csv_path, header=False, index=False)
                 buzones = pd.DataFrame(buzones)
                 # Datos de buzones
                 buzones_csv_path = os.path.join(data_dir, "buzon.csv")
