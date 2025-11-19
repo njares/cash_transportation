@@ -19,24 +19,13 @@ def plot_ganancias(profile, tabla_df, output_file=None):
         tabla_df: DataFrame listo
         output_file: Ruta donde guardar la imagen (opcional)
     """
-    df_list = []
-    buzones = tabla_df["buzon"].unique()
-    buzones.sort()
-    for b_idx in buzones:
-        df_list.append(
-            tabla_df.loc[tabla_df["buzon"].eq(b_idx)].iloc[
-                :, ["ganancia_mean", "ganancia_std"]
-            ].reset_index(drop=True)
-        )
 
-    df_final = pd.concat(df_list, axis=1)
-    cols = []
-    for b_idx in buzones:
-        cols.append("mean_"+str(b_idx))
-        cols.append("std_"+str(b_idx))
-    df_final.columns = cols
-
-    df_final["interes"] = list(range(1, 11))
+    plot_df = pd.DataFrame()
+    plot_df["interes"] = tabla_df[tabla_df["buzon"] == "0"]["interes"].astype(float).reset_index(drop=True)
+    #plot_df.columns = ["interes"]
+    for b_idx in range(5):
+        plot_df["mean_"+str(b_idx)] = tabla_df[tabla_df["buzon"] == str(b_idx)]["ganancia_mean"].astype(float).reset_index(drop=True)
+        plot_df["std_"+str(b_idx)] = tabla_df[tabla_df["buzon"] == str(b_idx)]["ganancia_std"].astype(float).reset_index(drop=True)
     
     # Define the columns to plot and their corresponding error columns
     value_cols = ['mean_0', 'mean_1', 'mean_2', 'mean_3', 'mean_4']
@@ -55,7 +44,7 @@ def plot_ganancias(profile, tabla_df, output_file=None):
     
     plt.xlabel('I')
     plt.ylabel('Percentage')
-    plt.title('Gain with a constant collection profile')
+    plt.title(f'Gain with a profile: {profile}')
     plt.legend()
     plt.grid(True)
     

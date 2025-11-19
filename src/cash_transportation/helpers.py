@@ -139,14 +139,18 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
         n_p = 8
         e_zero = collections[:, 0]
         mu = e_zero[0]
-        alpha = 1/(std**2)
-        theta = mu/alpha
-        rand_collect = rng.gamma(alpha, theta, size=collections.shape) - mu
-        rand_e_zero = rng.gamma(alpha, theta, size=e_zero.shape) - mu
+        if std == 0:
+            rand_collect = np.zeros(collections.shape)
+            rand_e_zero = np.zeros(e_zero.shape)
+        else:
+            alpha = 1/(std**2)
+            theta = mu/alpha
+            rand_collect = rng.gamma(alpha, theta, size=collections.shape) - mu
+            rand_e_zero = rng.gamma(alpha, theta, size=e_zero.shape) - mu
         collections = collections + rand_collect
         e_zero = e_zero + rand_e_zero
-        e_zero = pd.DataFrame(e_zero)
         collections = pd.DataFrame(collections)
+        e_zero = pd.DataFrame(e_zero)
         # guardar perfiles aleatorios
         # Recaudaciones por sucursal
         recaudacion_csv_path = os.path.join(data_dir, "recaudacion.csv")
