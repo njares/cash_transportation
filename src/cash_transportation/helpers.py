@@ -183,24 +183,28 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
                 tiempo = time.time()-start
                 print(f"t={tiempo:.2f}")
                 seed_runtime += tiempo
-                try:
-                    # Calcular costo total
-                    costo_total = sum([prob.objective.value() for prob in Problems])
-                    # Calcular costo financiero sin interés
-                    costo_financiero = e_zero.values.sum()
-                    for var in variables:
-                        var_id = var.name.split('_')[0]
-                        if var_id == 'e':
-                            _, dia = var.name.split('_')[1:]
-                            if int(dia) != n_d-1:
-                                costo_financiero += var.varValue
-                    # es sin interés, porque para el costo financiero real
-                    # se necesita la siguiente linea:
-                    # costos_financiero_logístico *= interes
-                except Exception:
-                    import pdb; pdb.set_trace()
-                    return -1
-                exp_dict[str(rand_seed)][name][str(interes_anual)][str(b)] = [costo_total, costo_financiero]
+                if status[0] != 'Resuelto (Òptimo)':
+                    exp_dict[str(rand_seed)][name][str(interes_anual)][str(b)] = [None, None, status[0]]
+                    continue
+                else:
+                    try:
+                        # Calcular costo total
+                        costo_total = sum([prob.objective.value() for prob in Problems])
+                        # Calcular costo financiero sin interés
+                        costo_financiero = e_zero.values.sum()
+                        for var in variables:
+                            var_id = var.name.split('_')[0]
+                            if var_id == 'e':
+                                _, dia = var.name.split('_')[1:]
+                                if int(dia) != n_d-1:
+                                    costo_financiero += var.varValue
+                        # es sin interés, porque para el costo financiero real
+                        # se necesita la siguiente linea:
+                        # costos_financiero_logístico *= interes
+                    except Exception as e:
+                        exp_dict[str(rand_seed)][name][str(interes_anual)][str(b)] = [None, None, f"Error: {str(e)}"]
+                        continue
+                    exp_dict[str(rand_seed)][name][str(interes_anual)][str(b)] = [costo_total, costo_financiero]
     # store per-seed runtime and update global meta
     exp_dict[str(rand_seed)]['_runtime_seconds'] = seed_runtime
     try:
@@ -225,10 +229,15 @@ def calcula_delta_std(exp_dict):
                 costos_financi = []
                 for seed_key in seed_keys:
                     try:
-                        costos_totales.append(exp_dict[seed_key][perfil][str(interes_anual)][str(b)][0])
-                        costos_financi.append(exp_dict[seed_key][perfil][str(interes_anual)][str(b)][1])
-                    except (KeyError, IndexError):
-                        # Skip if structure is incomplete for this seed
+                        costo_total = exp_dict[seed_key][perfil][str(interes_anual)][str(b)][0]
+                        costo_financiero = exp_dict[seed_key][perfil][str(interes_anual)][str(b)][1]
+                        
+                        # Verificar que los valores no sean None o inválidos
+                        if costo_total is not None and costo_financiero is not None:
+                            costos_totales.append(costo_total)
+                            costos_financi.append(costo_financiero)
+                    except (KeyError, IndexError, TypeError):
+                        # Skip si hay estructura incompleta o valores inválidos
                         continue
                 # Need at least 2 data points to calculate delta_std
                 if len(costos_totales) < 3:

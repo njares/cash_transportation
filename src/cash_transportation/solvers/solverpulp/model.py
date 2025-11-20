@@ -44,7 +44,7 @@ def model_problem(
     routes = range(amount_of_routes)
     
     #### DATOS
-    try:                                                                                                                                                                                      
+    try:
         # Sucursales en cada ruta        
         route_branches_df = pd.read_csv(route_branches_csv, header=None)
         route_branches = {
@@ -93,9 +93,9 @@ def model_problem(
         if debug:
             print("collection = {}".format(collection))
 
-    except Exception as e:                                                                                                                                                                    
-        print(f"ERROR: No se pudieron cargar los datos desde los archivos CSV: {str(e)}")                                                                                                     
-        return None, [], []                                                                                                                                                                   
+    except Exception as e:
+        print(f"ERROR: No se pudieron cargar los datos desde los archivos CSV: {str(e)}")
+        return None, [], []
     
     msg_flag = False
     if debug:
