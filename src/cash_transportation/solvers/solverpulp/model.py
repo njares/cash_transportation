@@ -268,7 +268,6 @@ def model_problem(
                 status.append(cur_status)
                 Problems.append(problem)
                 variables += problem.variables()
-                
             
             except Exception as e:
                 print(f"ERROR: Fallo al resolver el problema con solver {solver}: {str(e)}")
@@ -276,6 +275,10 @@ def model_problem(
                 Problems.append(problem)
                 variables += problem.variables()
                 return status, variables, Problems
+        
+        except Exception as e:
+            print(f"ERROR: Fallo al construir el problema {prob}: {str(e)}")
+            return None, [], []
     
     if debug:
         print("Solver took {} seconds.".format(time.time() - start))
