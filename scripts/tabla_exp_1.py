@@ -143,7 +143,10 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 costos_logisticos_logistico = []
                 for seed in seed_keys:
                     try:
-                        costos_logisticos_logistico.append(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][0])
+                        if len(exp_dict[seed][perfil]['0.0'][str(buzon_idx)]) == 2:
+                            costos_logisticos_logistico.append(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][0])
+                        else:
+                            print(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][2])
                     except (KeyError, IndexError):
                         continue
                 
@@ -161,7 +164,10 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 costos_financieros_logistico = []
                 for seed in seed_keys:
                     try:
-                        costos_financieros_logistico.append(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][1]*interes)
+                        if len(exp_dict[seed][perfil]['0.0'][str(buzon_idx)]) == 2:
+                            costos_financieros_logistico.append(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][1]*interes)
+                        else:
+                            print(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][2])
                     except (KeyError, IndexError):
                         continue
                 
@@ -182,7 +188,10 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 costos_financieros_financiero = []
                 for seed in seed_keys:
                     try:
-                        costos_financieros_financiero.append(exp_dict[seed][perfil][str(interes_anual)][str(buzon_idx)][1]*interes)
+                        if len(exp_dict[seed][perfil]['0.0'][str(buzon_idx)]) == 2:
+                            costos_financieros_financiero.append(exp_dict[seed][perfil][str(interes_anual)][str(buzon_idx)][1]*interes)
+                        else:
+                            print(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][2])
                     except (KeyError, IndexError):
                         continue
                 
@@ -195,7 +204,10 @@ def generate_tables(exp_dict, output_file=None, ods_file=None):
                 costos_total_financiero = []
                 for seed in seed_keys:
                     try:
-                        costos_total_financiero.append(exp_dict[seed][perfil][str(interes_anual)][str(buzon_idx)][0])
+                        if len(exp_dict[seed][perfil]['0.0'][str(buzon_idx)]) == 2:
+                            costos_total_financiero.append(exp_dict[seed][perfil][str(interes_anual)][str(buzon_idx)][0])
+                        else:
+                            print(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][2])
                     except (KeyError, IndexError):
                         continue
                 
