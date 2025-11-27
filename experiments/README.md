@@ -17,7 +17,6 @@ Este directorio contiene los resultados de experimentos ejecutados con diferente
 | `exp_2025-11-17_gurobi_2.0_10_1.5e-3_0.500_0.5000.json` | 2025-11-17 | gurobi | 2.0 | 10 | 1.5e-3 | 0.500 | 0.5000 | Caso con ruido 50 %  |
 | `exp_2025-11-17_gurobi_2.0_10_1.5e-3_0.750_0.7500.json` | 2025-11-17 | gurobi | 2.0 | 10 | 1.5e-3 | 0.750 | 0.7500 | Caso con ruido 75 % |
 | `exp_2025-11-17_gurobi_2.0_10_1.5e-3_1.000_1.0000.json` | 2025-11-17 | gurobi | 2.0 | 10 | 1.5e-3 | 1.000 | 1.0000 | Caso con ruido 100 % |
-| ... | ... | ... | ... | ... | ... | ... | ... | ... |
 
 ## Descripción de Parámetros
 
@@ -30,16 +29,16 @@ Este directorio contiene los resultados de experimentos ejecutados con diferente
 
 ## Ejemplo:
 
-exp_2025-11-16_gurobi_2.0_10_1.5e-3_0.525_0.3444.json
+`exp_2025-11-16_gurobi_2.0_10_1.5e-3_0.525_0.3444.json`
 
 ### Explicación de los Componentes
 
- • exp_: Prefijo estándar para identificar archivos de experimentos.
- • 2025-11-16: Fecha del experimento (formato YYYY-MM-DD).
- • gurobi: Solver utilizado.
- • 2.0: Valor de --V-profile-max.
- • 10: Valor de --V-max-day.
- • 1.5e-3: Valor de --route-cost-mult.
- • 0.525: Valor de --C-std.
- • 0.3444: Valor de --V-std.
+- `exp_`: Prefijo estándar para identificar archivos de experimentos.
+- `2025-11-16`: Fecha del experimento (formato YYYY-MM-DD).
+- `gurobi`: Solver utilizado.
+- `2.0`: Valor de --V-profile-max.
+- `10`: Valor de --V-max-day.
+- `1.5e-3`: Valor de --route-cost-mult.
+- `0.525`: Valor de --C-std.
+- `0.3444`: Valor de --V-std.
  

@@ -34,9 +34,9 @@ def plot_ganancias(profile, tabla_df, output_file=None):
 
     for i, col in enumerate(value_cols):
         plt.errorbar(
-            df_final['interes'],
-            df_final[col],
-            yerr=df_final[error_cols[i]],
+            plot_df['interes'],
+            plot_df[col],
+            yerr=plot_df[error_cols[i]],
             fmt='-o', # Format: line with circles
             label=labels[i], # Label for legend
             capsize=4 # Size of the error bar caps
@@ -47,6 +47,7 @@ def plot_ganancias(profile, tabla_df, output_file=None):
     plt.title(f'Gain with a profile: {profile}')
     plt.legend()
     plt.grid(True)
+    plt.ylim(-5, 75)
     
     # Guardar si se especificó un archivo de salida
     if output_file:
@@ -99,14 +100,14 @@ def main():
             output_path = os.path.join(output_dir, f"ganancias_{base_name}.png")
         
         # parse txt file
-        # profiles, tablas_df = parse_txt(args.csv_file)
+        profiles, tablas_df = parse_txt(args.csv_file)
         
-        # # Generar los gráficos
-        # for profile, tabla_df in zip(profiles, tablas_df):
+        # Generar los gráficos
+        for profile, tabla_df in zip(profiles, tablas_df):
         #     #plot_ganancias(profile, tabla_df, output_path)
-        #     plot_ganancias(profile, tabla_df, "")
-        tabla_df = pd.read_csv(args.csv_file)
-        plot_ganancias("constante", tabla_df)
+             plot_ganancias(profile, tabla_df, "")
+        #tabla_df = pd.read_csv(args.csv_file)
+        #plot_ganancias("constante", tabla_df)
 
     except Exception as e:
         print(f"Error procesando archivo: {e}", file=sys.stderr)
