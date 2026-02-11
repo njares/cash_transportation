@@ -11,7 +11,7 @@ python scripts/experimento_2.py [opciones]
 ### Opciones
 
 - `--threads INT` (por defecto: 8): cantidad de hilos.
-- `--n-min INT` (por defecto: 1): mínimo de iteraciones por escenario.
+- `--n-min INT` (por defecto: 3): mínimo de iteraciones por escenario.
 - `--n-max INT` (por defecto: 0): máximo de iteraciones por escenario (0 = sin tope).
 - `--solver STR` (por defecto: HiGHS): solver a utilizar (ej.: `cbc`, `HiGHS`, `fscip`).
 - `--collection-mult FLOAT` (por defecto: 1.0): multiplicador de recaudación total.
@@ -20,8 +20,8 @@ python scripts/experimento_2.py [opciones]
 - `--V-profile-max FLOAT` (por defecto: 2.0): Cuánto más grande es la recaudación máxima respecto a la mínima en el perfil V.
 - `--V-max-day INT` (por defecto: 10): Qué día se realiza la máxima recaudación.
 - `--route-cost-mult FLOAT` (por defecto: 1.5e-3): Multiplicador de costo de rutas.
-- `--C-std FLOAT` (por defecto: .525): Desviación estándar perfil constante.
-- `--V-std FLOAT` (por defecto: .3444): Desviación estándar perfil V.
+- `--profile STR` (por defecto: C): Perfil de recaudación (C: constante, V: wedge).
+- `--std FLOAT` : Desviación estándar. Por defecto .525 para perfil constante y .3444 para perfil V.
 
 ### Ejemplos
 
@@ -69,11 +69,11 @@ Notas:
 - Más adelante se podrá agregar `--log-file` si se necesita persistir la salida.
 - El perfil V ahora permite configurar la máxima recaudación y el día de pico.
 - El costo de rutas ahora es configurable mediante `--route-cost-mult`.
-- Las desviaciones estándar de los perfiles constantes y V ahora son configurables mediante `--C-std` y `--V-std`.
+- Las desviaciones estándar de los perfiles constantes y V ahora son configurables mediante `--std`.
 
 ## Tabla de Resumen de Experimentos
 
-`scripts/tabla_exp_1.py` genera tablas resumen con estadísticas (mean ± std) de experimentos.
+`scripts/tabla_exp_1.py` genera tablas resumen con estadísticas (mean y std) de experimentos.
 
 ### Uso básico
 
@@ -83,29 +83,45 @@ python scripts/tabla_exp_1.py [opciones]
 
 ### Opciones
 
-- `--exp-id STR` (por defecto: `exp_test.json`): archivo JSON del experimento a procesar. Si es solo un nombre (sin ruta), se busca en `experiments/runs/`.
-- `--output PATH` (opcional): archivo de texto donde escribir las tablas. Por defecto imprime a stdout. Si no se especifica pero se usa `--ods`, se genera automáticamente en `artifacts/reports/tabla_<exp-id>.txt`.
-- `--ods PATH` (opcional): ruta del archivo ODS a generar. Requiere `odfpy` (instalar con `pip install odfpy`). Si no se especifica pero se usa `--output`, se puede generar automáticamente en `artifacts/reports/tabla_<exp-id>.ods`.
-- `--output-dir PATH` (opcional): directorio donde guardar archivos. Por defecto: `artifacts/reports/`.
+- `--exp-id STR` (por defecto: `exp_test.json`): Archivo JSON del experimento a procesar. Si es solo un nombre (sin ruta), se busca en `experiments/runs/`.
+- `--std-output` (opcional): Imprime la tabla en stdout. Por defecto no imprime a stdout.
+- `--csv-output PATH` (opcional): Archivo de texto donde escribir la tabla. Si no se especifica ruta, se genera automáticamente en `artifacts/reports/tabla_<exp-id>.csv`. Si se especifica ruta, usa esa ruta.
 
 ### Ejemplos
 
 Imprimir a stdout:
 ```bash
-python scripts/tabla_exp_1.py --exp-id exp_gurobi_durga_full_2025_11_5.json
+python scripts/tabla_exp_1.py --exp-id exp_gurobi_durga_full_2025_11_5.json --std-output
 ```
 
-Generar archivo de texto automáticamente:
+Generar archivo csv:
 ```bash
-python scripts/tabla_exp_1.py --exp-id exp_gurobi_durga_full_2025_11_5.json --output
+python scripts/tabla_exp_1.py --exp-id exp_gurobi_durga_full_2025_11_5.json --csv-output
 ```
 
-Generar archivo de texto y ODS:
-```bash
-python scripts/tabla_exp_1.py --exp-id exp_gurobi_durga_full_2025_11_5.json --output --ods
-```
-
-El script genera tablas para cada perfil ("constant" y "V") con:
+El script genera tablas con:
 - Costos logísticos, financieros y totales para casos logísticos y financieros
 - Ganancia (porcentaje de reducción de costo)
-- Estadísticas: media ± desviación estándar
+- Estadísticas: media y desviación estándar
+
+## Graficos a partir de las tablas
+
+`scripts/plot_exp_1.py` Genera gráficos comparativos de ganancias a partir de tablas CSV.
+
+### Uso básico
+
+```bash
+python scripts/plot_exp_1.py [opciones]
+```
+
+### Opciones
+
+- `--csv-file STR` : Archivo CSV con los datos de ganancia.
+- `--output STR` (opcional): Archivo de salida para guardar la imagen. Por defecto guarda en `artifacts/graficos/<csv-file-basename>.png`.
+
+### Ejemplos
+
+Generar archivo png:
+```bash
+python scripts/plot_exp_1.py --exp-id exp_gurobi_durga_full_2025_11_5.json
+```

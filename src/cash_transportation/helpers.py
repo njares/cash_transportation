@@ -117,7 +117,7 @@ def generar_escenarios(n_s, n_p, n):
     return escenarios
 
 
-def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solver, debug=False, data_dir: str = './data/generated/'):
+def agregar_resultado(exp_dict, collection_profile, std, profile_name, n_thr, solver, debug=False, data_dir: str = './data/generated/'):
     os.makedirs(data_dir, exist_ok=True)
     rutas_csv_path = os.path.join(data_dir, "rutas.csv")
     costo_rutas_csv_path = os.path.join(data_dir, "costo_rutas.csv")
@@ -130,81 +130,78 @@ def agregar_resultado(exp_dict, collections_profiles, std_profiles, n_thr, solve
     rand_seed = len(exp_dict)-1
     exp_dict[str(rand_seed)] = {}
     seed_runtime = 0.0
-    # generar perfiles aleatorios
+    # generar perfil aleatorio
     rng = np.random.default_rng(seed=rand_seed)
-    profiles_names = ["constant", "V"]
-    for collections, std, name in zip(collections_profiles, std_profiles, profiles_names):
-        n_s, n_d = collections.shape
-        #n_p,_ = rutas.shape
-        n_p = 8
-        e_zero = collections[:, 0]
-        mu = e_zero[0]
-        if std == 0:
-            rand_collect = np.zeros(collections.shape)
-            rand_e_zero = np.zeros(e_zero.shape)
-        else:
-            alpha = 1/(std**2)
-            theta = mu/alpha
-            rand_collect = rng.gamma(alpha, theta, size=collections.shape) - mu
-            rand_e_zero = rng.gamma(alpha, theta, size=e_zero.shape) - mu
-        collections = collections + rand_collect
-        e_zero = e_zero + rand_e_zero
-        collections = pd.DataFrame(collections)
-        e_zero = pd.DataFrame(e_zero)
-        # guardar perfiles aleatorios
-        # Recaudaciones por sucursal
-        recaudacion_csv_path = os.path.join(data_dir, "recaudacion.csv")
-        # Recaudacion inicial
-        e_zero_csv_path = os.path.join(data_dir, "e0.csv")
-        exp_dict[str(rand_seed)][name] = {}
-        for interes_anual in np.linspace(0, 10, 11):
-            interes = (1+interes_anual/100)**(1/365)-1
-            exp_dict[str(rand_seed)][name][str(interes_anual)] = {}
-            #cantidad de recolecciones mensuales
-            for b in range(5):
-                buzones = np.ones(n_s)*buzones_sizes[b]
-                collections_clip = collections.clip(lower=0.0, upper=buzones_sizes[b])
-                e_zero_clip = e_zero.clip(lower=0.0, upper=buzones_sizes[b])
-                collections_clip.to_csv(recaudacion_csv_path, header=False, index=False, sep="\t")
-                e_zero_clip.to_csv(e_zero_csv_path, header=False, index=False)
-                buzones = pd.DataFrame(buzones)
-                # Datos de buzones
-                buzones_csv_path = os.path.join(data_dir, "buzon.csv")
-                buzones.to_csv(buzones_csv_path, header=False, index=False)
-                print(f"Resolviendo caso {rand_seed} {name} {interes_anual} {b} ", end="")
-                start = time.time()
-                # Resolver problema
-                status, variables, Problems = model.model_problem(
-                    n_d, n_s, n_p,
-                    rutas_csv_path, costo_rutas_csv_path, e_zero_csv_path,
-                    buzones_csv_path, habiles_csv_path, recaudacion_csv_path,
-                    daily_interest_rate=interes, n_thr=n_thr, solver=solver, debug=debug
-                )
-                tiempo = time.time()-start
-                print(f"t={tiempo:.2f}")
-                seed_runtime += tiempo
-                if status[0] != 'Resuelto (Òptimo)':
-                    exp_dict[str(rand_seed)][name][str(interes_anual)][str(b)] = [None, None, status[0]]
+    n_s, n_d = collection_profile.shape
+    #n_p,_ = rutas.shape
+    n_p = 8
+    e_zero = collection_profile[:, 0]
+    mu = e_zero[0]
+    if std == 0:
+        rand_collect = np.zeros(collection_profile.shape)
+        rand_e_zero = np.zeros(e_zero.shape)
+    else:
+        alpha = 1/(std**2)
+        theta = mu/alpha
+        rand_collect = rng.gamma(alpha, theta, size=collection_profile.shape) - mu
+        rand_e_zero = rng.gamma(alpha, theta, size=e_zero.shape) - mu
+    collections = collection_profile + rand_collect
+    e_zero = e_zero + rand_e_zero
+    collections = pd.DataFrame(collections)
+    e_zero = pd.DataFrame(e_zero)
+    # guardar perfil aleatorio
+    # Recaudaciones por sucursal
+    recaudacion_csv_path = os.path.join(data_dir, "recaudacion.csv")
+    # Recaudacion inicial
+    e_zero_csv_path = os.path.join(data_dir, "e0.csv")
+    for interes_anual in np.linspace(0, 10, 11):
+        interes = (1+interes_anual/100)**(1/365)-1
+        exp_dict[str(rand_seed)][str(interes_anual)] = {}
+        #cantidad de recolecciones mensuales
+        for b in range(5):
+            buzones = np.ones(n_s)*buzones_sizes[b]
+            collections_clip = collections.clip(lower=0.0, upper=buzones_sizes[b])
+            e_zero_clip = e_zero.clip(lower=0.0, upper=buzones_sizes[b])
+            collections_clip.to_csv(recaudacion_csv_path, header=False, index=False, sep="\t")
+            e_zero_clip.to_csv(e_zero_csv_path, header=False, index=False)
+            buzones = pd.DataFrame(buzones)
+            # Datos de buzones
+            buzones_csv_path = os.path.join(data_dir, "buzon.csv")
+            buzones.to_csv(buzones_csv_path, header=False, index=False)
+            print(f"Resolviendo caso {rand_seed} {interes_anual} {b} ", end="")
+            start = time.time()
+            # Resolver problema
+            status, variables, Problems = model.model_problem(
+                n_d, n_s, n_p,
+                rutas_csv_path, costo_rutas_csv_path, e_zero_csv_path,
+                buzones_csv_path, habiles_csv_path, recaudacion_csv_path,
+                daily_interest_rate=interes, n_thr=n_thr, solver=solver, debug=debug
+            )
+            tiempo = time.time()-start
+            print(f"t={tiempo:.2f}")
+            seed_runtime += tiempo
+            if status[0] != 'Resuelto (Óptimo)':
+                exp_dict[str(rand_seed)][str(interes_anual)][str(b)] = [None, None, status[0]]
+                continue
+            else:
+                try:
+                    # Calcular costo total
+                    costo_total = sum([prob.objective.value() for prob in Problems])
+                    # Calcular costo financiero sin interés
+                    costo_financiero = e_zero.values.sum()
+                    for var in variables:
+                        var_id = var.name.split('_')[0]
+                        if var_id == 'e':
+                            _, dia = var.name.split('_')[1:]
+                            if int(dia) != n_d-1:
+                                costo_financiero += var.varValue
+                    exp_dict[str(rand_seed)][str(interes_anual)][str(b)] = [costo_total, costo_financiero]
+                    # es sin interés, porque para el costo financiero real
+                    # se necesita la siguiente linea:
+                    # costos_financiero_logístico *= interes
+                except Exception as e:
+                    exp_dict[str(rand_seed)][str(interes_anual)][str(b)] = [None, None, f"Error: {str(e)}"]
                     continue
-                else:
-                    try:
-                        # Calcular costo total
-                        costo_total = sum([prob.objective.value() for prob in Problems])
-                        # Calcular costo financiero sin interés
-                        costo_financiero = e_zero.values.sum()
-                        for var in variables:
-                            var_id = var.name.split('_')[0]
-                            if var_id == 'e':
-                                _, dia = var.name.split('_')[1:]
-                                if int(dia) != n_d-1:
-                                    costo_financiero += var.varValue
-                        # es sin interés, porque para el costo financiero real
-                        # se necesita la siguiente linea:
-                        # costos_financiero_logístico *= interes
-                    except Exception as e:
-                        exp_dict[str(rand_seed)][name][str(interes_anual)][str(b)] = [None, None, f"Error: {str(e)}"]
-                        continue
-                    exp_dict[str(rand_seed)][name][str(interes_anual)][str(b)] = [costo_total, costo_financiero]
     # store per-seed runtime and update global meta
     exp_dict[str(rand_seed)]['_runtime_seconds'] = seed_runtime
     try:
@@ -221,45 +218,43 @@ def calcula_delta_std(exp_dict):
     N_seeds = len(seed_keys)
     delta_std = 0.0  # quiero la máxima delta_std
     # para cada exp_setup
-    for perfil in ["constant", "V"]:
-        for interes_anual in np.linspace(0, 10, 11):
-            for b in range(4):
-                # recorrer las seeds
-                costos_totales = []
-                costos_financi = []
-                for seed_key in seed_keys:
-                    try:
-                        costo_total = exp_dict[seed_key][perfil][str(interes_anual)][str(b)][0]
-                        costo_financiero = exp_dict[seed_key][perfil][str(interes_anual)][str(b)][1]
-                        
-                        # Verificar que los valores no sean None o inválidos
-                        if costo_total is not None and costo_financiero is not None:
-                            costos_totales.append(costo_total)
-                            costos_financi.append(costo_financiero)
-                    except (KeyError, IndexError, TypeError):
-                        # Skip si hay estructura incompleta o valores inválidos
-                        continue
-                # Need at least 2 data points to calculate delta_std
-                if len(costos_totales) < 3:
+    for interes_anual in np.linspace(0, 10, 11):
+        for b in range(5):
+            # recorrer las seeds
+            costos_totales = []
+            costos_financi = []
+            for seed_key in seed_keys:
+                try:
+                    costo_total = exp_dict[seed_key][str(interes_anual)][str(b)][0]
+                    costo_financiero = exp_dict[seed_key][str(interes_anual)][str(b)][1]
+                    
+                    # Verificar que los valores no sean None o inválidos
+                    if costo_total is not None and costo_financiero is not None:
+                        costos_totales.append(costo_total)
+                        costos_financi.append(costo_financiero)
+                except (KeyError, IndexError, TypeError):
+                    # Skip si hay estructura incompleta o valores inválidos
                     continue
-                # calcular las std
-                std_total_last = np.std(costos_totales)
-                std_finan_last = np.std(costos_financi)
-                std_total_prev = np.std(costos_totales[:-1])
-                std_finan_prev = np.std(costos_financi[:-1])
-                # ver la variación porcentual
-                if std_total_last == 0 or std_total_prev == 0:
-                    delta_std_total = 0.0
-                else:
-                    delta_std_total = np.abs((std_total_last-std_total_prev)/std_total_last)
-                if std_finan_last == 0 or std_finan_prev == 0:
-                    delta_std_finan = 0.0
-                else:
-                    delta_std_finan = np.abs((std_finan_last-std_finan_prev)/std_finan_last)
-                current_delta_std = max(delta_std_total, delta_std_finan)
-                delta_std = max(current_delta_std, delta_std)
+            # Need at least 2 data points to calculate delta_std
+            if len(costos_totales) < 3:
+                continue
+            # calcular las std
+            std_total_last = np.std(costos_totales)
+            std_finan_last = np.std(costos_financi)
+            std_total_prev = np.std(costos_totales[:-1])
+            std_finan_prev = np.std(costos_financi[:-1])
+            # ver la variación porcentual
+            if std_total_last == 0 or std_total_prev == 0:
+                delta_std_total = 0.0
+            else:
+                delta_std_total = np.abs((std_total_last-std_total_prev)/std_total_last)
+            if std_finan_last == 0 or std_finan_prev == 0:
+                delta_std_finan = 0.0
+            else:
+                delta_std_finan = np.abs((std_finan_last-std_finan_prev)/std_finan_last)
+            current_delta_std = max(delta_std_total, delta_std_finan)
+            delta_std = max(current_delta_std, delta_std)
     return delta_std
-
 
 # From previous main/helpers.py: Excel-to-CSV generator
 def generate_csvs(excel_df, sheet_name, data_dir="./data"):
@@ -331,5 +326,3 @@ def generate_csvs(excel_df, sheet_name, data_dir="./data"):
     l_d_c = [i for i in range(l_d_c.size) if l_d_c[i] == 1]
 
     return n_d, n_p, n_s, big_M, nombres, costs/rutas.sum(1), e_zero, l_d_c, nombres_rutas
-
-

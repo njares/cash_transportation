@@ -10,22 +10,21 @@ import pandas as pd
 import numpy as np
 
 
-def plot_ganancias(profile, tabla_df, output_file=None):
+def plot_ganancias(tabla_df, output_file=None):
     """
     Lee un DataFrame y genera un gráfico de ganancias.
     
     Args:
-        profile: nombre del perfil
         tabla_df: DataFrame listo
         output_file: Ruta donde guardar la imagen (opcional)
     """
 
     plot_df = pd.DataFrame()
-    plot_df["interes"] = tabla_df[tabla_df["buzon"] == "0"]["interes"].astype(float).reset_index(drop=True)
+    plot_df["interes"] = tabla_df[tabla_df["buzon"] == 0]["interes"].astype(float).reset_index(drop=True)
     #plot_df.columns = ["interes"]
     for b_idx in range(5):
-        plot_df["mean_"+str(b_idx)] = tabla_df[tabla_df["buzon"] == str(b_idx)]["ganancia_mean"].astype(float).reset_index(drop=True)
-        plot_df["std_"+str(b_idx)] = tabla_df[tabla_df["buzon"] == str(b_idx)]["ganancia_std"].astype(float).reset_index(drop=True)
+        plot_df["mean_"+str(b_idx)] = tabla_df[tabla_df["buzon"] == b_idx]["ganancia_mean"].astype(float).reset_index(drop=True)
+        plot_df["std_"+str(b_idx)] = tabla_df[tabla_df["buzon"] == b_idx]["ganancia_std"].astype(float).reset_index(drop=True)
     
     # Define the columns to plot and their corresponding error columns
     value_cols = ['mean_0', 'mean_1', 'mean_2', 'mean_3', 'mean_4']
@@ -44,17 +43,14 @@ def plot_ganancias(profile, tabla_df, output_file=None):
     
     plt.xlabel('I')
     plt.ylabel('Percentage')
-    plt.title(f'Gain with a profile: {profile}')
+    plt.title(f'Gain')
     plt.legend()
     plt.grid(True)
     plt.ylim(-5, 75)
     
-    # Guardar si se especificó un archivo de salida
-    if output_file:
-        plt.savefig(output_file, dpi=300, bbox_inches='tight')
-        print(f"Gráfico guardado en: {output_file}")
-    else:
-        plt.show()
+    # Guardar
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    print(f"Gráfico guardado en: {output_file}")
 
 
 def main():
@@ -72,42 +68,23 @@ def main():
         type=str,
         help="Archivo de salida para guardar la imagen (opcional)"
     )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        default=None,
-        help="Directorio donde guardar archivos (por defecto: artifacts/reports/)"
-    )
     
     args = parser.parse_args()
     
     try:
-        # Determinar directorio de salida
-        if args.output_dir:
-            output_dir = args.output_dir
-        else:
+        output_path = args.output
+        
+        if output_path is None:
             repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            output_dir = os.path.join(repo_root, 'artifacts', 'reports')
-        
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Determinar ruta de salida
-        if args.output:
-            output_path = args.output
-        else:
-            # Generar nombre de archivo basado en el CSV
+            output_dir = os.path.join(repo_root, 'artifacts', 'graficos')
+            os.makedirs(output_dir, exist_ok=True)
             base_name = os.path.splitext(os.path.basename(args.csv_file))[0]
-            output_path = os.path.join(output_dir, f"ganancias_{base_name}.png")
-        
-        # parse txt file
-        profiles, tablas_df = parse_txt(args.csv_file)
-        
-        # Generar los gráficos
-        for profile, tabla_df in zip(profiles, tablas_df):
-        #     #plot_ganancias(profile, tabla_df, output_path)
-             plot_ganancias(profile, tabla_df, "")
-        #tabla_df = pd.read_csv(args.csv_file)
-        #plot_ganancias("constante", tabla_df)
+            output_path = os.path.join(output_dir, f"{base_name}.png")
+    
+        tabla_df = pd.read_csv(args.csv_file)
+
+        # Generar el gráfico
+        plot_ganancias(tabla_df, output_path)
 
     except Exception as e:
         print(f"Error procesando archivo: {e}", file=sys.stderr)
@@ -115,23 +92,7 @@ def main():
         traceback.print_exc()
         sys.exit(1)
 
-def parse_txt(csv_file):
-    with open(csv_file, "r") as file:
-        lines = file.readlines()
-    profiles = []
-    tablas_df = []
-    # Tabla constante
-    profiles.append(lines[0][:-1])
-    tabla = pd.DataFrame([l[:-1].split(",") for l in lines[2:52]])
-    tabla.columns = lines[1][:-1].split(",")
-    tablas_df.append(tabla)
-    # Tabla V
-    profiles.append(lines[52][:-1])
-    tabla = pd.DataFrame([l[:-1].split(",") for l in lines[54:]])
-    tabla.columns = lines[53][:-1].split(",")
-    tablas_df.append(tabla)
-    return profiles, tablas_df
-
 
 if __name__ == "__main__":
+    import pdb;pdb.set_trace()
     main()

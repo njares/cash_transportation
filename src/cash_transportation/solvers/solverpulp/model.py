@@ -242,7 +242,7 @@ def model_problem(
                 
                 # Verificar el estado de resolución
                 if problem.status == pulp.LpStatusOptimal:
-                    cur_status = 'Resuelto (Òptimo)'
+                    cur_status = 'Resuelto (Óptimo)'
                 elif problem.status == pulp.LpStatusInfeasible:
                     cur_status = 'No factible'
                 elif problem.status == pulp.LpStatusUnbounded:

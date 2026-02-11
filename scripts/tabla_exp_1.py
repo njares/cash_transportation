@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Genera tablas resumen de experimentos con estadísticas (mean ± std) para diferentes costos y ganancias.
+Genera tablas resumen de experimentos con estadísticas (mean y std) para diferentes costos y ganancias.
 """
 import json
 import numpy as np
@@ -9,13 +9,15 @@ import os
 import sys
 
 
-def ver_tabla(tabla, output_file=None):
+def ver_tabla(tabla, std_output=False, csv_file=None):
     """Imprime una tabla formateada."""
+    
     def _print(s):
-        if output_file:
-            output_file.write(s)
-        else:
-            print(s, end='')
+        if std_output:
+            print(s)
+        if csv_file:
+            csv_file.write(s)
+            csv_file.write('\n')
     
     # Imprimir encabezado
     headers = [
@@ -28,21 +30,15 @@ def ver_tabla(tabla, output_file=None):
         "costo_total_financiero_mean", "costo_total_financiero_std",
         "ganancia_mean", "ganancia_std"
     ]
+    
     _print(','.join(headers))
-    _print('\n')
     
     for row in tabla:
-        ver_fila(row, output_file)
-        _print('\n')
+        _print(ver_fila(row))
 
 
-def ver_fila(fila, output_file=None):
-    """Imprime una fila formateada."""
-    def _print(s):
-        if output_file:
-            output_file.write(s)
-        else:
-            print(s, end='')
+def ver_fila(fila):
+    """Devuelve una fila formateada."""
     
     # Formatear cada par de valores (mean, std) como dos columnas separadas por coma
     values = []
@@ -66,7 +62,7 @@ def ver_fila(fila, output_file=None):
     values.append(f"{ganancia_mean:.2G}")
     values.append(f"{ganancia_std:.2G}")
     
-    _print(','.join(values))
+    return ','.join(values)
 
 
 def parse_experiment(exp_id):
@@ -88,243 +84,136 @@ def parse_experiment(exp_id):
     return exp_dict
 
 
-def generate_tables(exp_dict, output_file=None, ods_file=None):
+def generate_tables(exp_dict, std_output=False, csv_file=None):
     """
     Genera las tablas de resumen para cada perfil.
     
     Estructura esperada del exp_dict:
-    - Llaves: rand_seed (string) -> perfil -> interés -> buzón -> [costo_total, costo_financiero_sin_interes]
+    - Llaves: rand_seed (string) -> interés -> buzón -> [costo_total, costo_financiero_sin_interes]
     - Excluye '_meta' del conteo de seeds
     
     Args:
         exp_dict: Diccionario con los resultados del experimento
-        output_file: Archivo de texto abierto para escritura (opcional)
-        ods_file: Ruta del archivo ODS a generar (opcional)
-    
-    Returns:
-        bool: True si ODS se generó exitosamente, False si falló o no se solicitó
+        std_output: (opcional): Imprime la tabla en stdout. Por defecto no imprime a stdout.
+        csv_file: (opcional): Archivo de texto donde escribir la tabla. Por defecto no se escribe la tabla.
     """
-    def _print(s):
-        if output_file:
-            output_file.write(s)
-        else:
-            print(s)
-    
-    def _print_err(s):
-        """Siempre imprime a stderr, no al archivo."""
-        print(s, file=sys.stderr)
     
     # Get actual seed keys, excluding _meta
     seed_keys = [k for k in exp_dict.keys() if k != '_meta']
     N_exp = len(seed_keys)
     
     if N_exp == 0:
-        _print("Error: No se encontraron seeds en el experimento (posiblemente vacío)")
+        print("Error: No se encontraron seeds en el experimento (posiblemente vacío)")
         return
     
-    # Store tables for ODS generation
-    tables_data = {}
-    
-    # 2 tablas (una por perfil)
     # 50 filas (5 buzones × 10 intereses)
     # 16 columnas (buzon, interes, 7 estadísticas con 2 columnas cada una)
-    for perfil in ["constant", "V"]:
-        # Tabla vacía
-        tabla = np.zeros((50, 16))
-        # Tamaños de buzones nuevos: [1, 3/4, 1/2, 1/3, 1/4]
-        buzones_sizes = [1, 3/4, 1/2, 1/3, 1/4]
-        for buzon_idx, buzon_size in enumerate(buzones_sizes):
-            for interes_anual in np.linspace(1, 10, 10):
-                cur_fila = int(buzon_idx*10 + (interes_anual-1))
-                interes = (1+interes_anual/100)**(1/365)-1
-                
-                # caso logístico
-                # costo logístico
-                costos_logisticos_logistico = []
-                for seed in seed_keys:
-                    try:
-                        if len(exp_dict[seed][perfil]['0.0'][str(buzon_idx)]) == 2:
-                            costos_logisticos_logistico.append(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][0])
-                        else:
-                            print(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][2])
-                    except (KeyError, IndexError):
-                        continue
-                
-                if len(costos_logisticos_logistico) == 0:
-                    continue
-                
-                mean = np.mean(costos_logisticos_logistico)
-                std = np.std(costos_logisticos_logistico)
-                tabla[cur_fila, 0] = buzon_idx  # buzon
-                tabla[cur_fila, 1] = interes_anual  # interes
-                tabla[cur_fila, 2] = mean
-                tabla[cur_fila, 3] = std
-                
-                # costo financiero
-                costos_financieros_logistico = []
-                for seed in seed_keys:
-                    try:
-                        if len(exp_dict[seed][perfil]['0.0'][str(buzon_idx)]) == 2:
-                            costos_financieros_logistico.append(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][1]*interes)
-                        else:
-                            print(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][2])
-                    except (KeyError, IndexError):
-                        continue
-                
-                mean = np.mean(costos_financieros_logistico)
-                std = np.std(costos_financieros_logistico)
-                tabla[cur_fila, 4] = mean
-                tabla[cur_fila, 5] = std
-                
-                # costo total
-                costos_total_logistico = [c_log + c_fin for c_log, c_fin in zip(costos_logisticos_logistico, costos_financieros_logistico)]
-                mean = np.mean(costos_total_logistico)
-                std = np.std(costos_total_logistico)
-                tabla[cur_fila, 6] = mean
-                tabla[cur_fila, 7] = std
-                
-                # caso financiero
-                # costo financiero
-                costos_financieros_financiero = []
-                for seed in seed_keys:
-                    try:
-                        if len(exp_dict[seed][perfil]['0.0'][str(buzon_idx)]) == 2:
-                            costos_financieros_financiero.append(exp_dict[seed][perfil][str(interes_anual)][str(buzon_idx)][1]*interes)
-                        else:
-                            print(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][2])
-                    except (KeyError, IndexError):
-                        continue
-                
-                mean = np.mean(costos_financieros_financiero)
-                std = np.std(costos_financieros_financiero)
-                tabla[cur_fila, 10] = mean
-                tabla[cur_fila, 11] = std
-                
-                # costo total
-                costos_total_financiero = []
-                for seed in seed_keys:
-                    try:
-                        if len(exp_dict[seed][perfil]['0.0'][str(buzon_idx)]) == 2:
-                            costos_total_financiero.append(exp_dict[seed][perfil][str(interes_anual)][str(buzon_idx)][0])
-                        else:
-                            print(exp_dict[seed][perfil]['0.0'][str(buzon_idx)][2])
-                    except (KeyError, IndexError):
-                        continue
-                
-                mean = np.mean(costos_total_financiero)
-                std = np.std(costos_total_financiero)
-                tabla[cur_fila, 12] = mean
-                tabla[cur_fila, 13] = std
-                
-                # costo logístico
-                costos_logistico_financiero = [c_tot - c_fin for c_tot, c_fin in zip(costos_total_financiero, costos_financieros_financiero)]
-                mean = np.mean(costos_logistico_financiero)
-                std = np.std(costos_logistico_financiero)
-                tabla[cur_fila, 8] = mean
-                tabla[cur_fila, 9] = std
-                
-                # ganancia
-                ganancias = [(c_log - c_fin) / c_log for c_log, c_fin in zip(costos_total_logistico, costos_total_financiero)]
-                mean = np.mean(ganancias)
-                std = np.std(ganancias)
-                tabla[cur_fila, 14] = mean
-                tabla[cur_fila, 15] = std
-        
-        tables_data[perfil] = tabla
-        _print(perfil)
-        _print('\n')
-        ver_tabla(tabla, output_file)
-    
-    # Generate ODS if requested
-    ods_success = False
-    if ods_file:
-        try:
-            generate_ods(tables_data, ods_file)
-            ods_success = True
-            _print_err(f"Archivo ODS generado exitosamente: {ods_file}")
-        except ImportError:
-            _print_err("ERROR: No se pudo generar ODS. Instala 'odfpy' con: pip install odfpy")
-        except Exception as e:
-            _print_err(f"ERROR generando ODS: {e}")
-            import traceback
-            _print_err(traceback.format_exc())
-    
-    return ods_success
-
-
-def generate_ods(tables_data, ods_file):
-    """
-    Genera un archivo ODS con las tablas usando odfpy.
-    """
-    from odf.opendocument import OpenDocumentSpreadsheet
-    from odf.style import Style, TableCellProperties, TextProperties
-    from odf.table import Table, TableRow, TableCell
-    from odf.text import P
-    
-    doc = OpenDocumentSpreadsheet()
-    
-    # Define styles
-    center_style = Style(name="Center", family="table-cell")
-    doc.automaticstyles.addElement(center_style)
-    
+    # Tabla vacía
+    tabla = np.zeros((50, 16))
     # Tamaños de buzones nuevos: [1, 3/4, 1/2, 1/3, 1/4]
     buzones_sizes = [1, 3/4, 1/2, 1/3, 1/4]
-    
-    for perfil, tabla in tables_data.items():
-        table = Table(name=perfil)
-        
-        # Header row
-        header_row = TableRow()
-        headers = ["#B", "I(%)", "costo logístico", "", "costo financiero", "", "costo total", "",
-                   "costo logístico", "", "costo financiero", "", "costo total", "", "ganancia (%)", ""]
-        
-        for h in headers:
-            cell = TableCell()
-            cell.addElement(P(text=h))
-            cell.setAttribute('stylename', 'Center')
-            header_row.addElement(cell)
-        table.addElement(header_row)
-        
-        # Data rows
-        for buzon_idx, buzon_size in enumerate(buzones_sizes):
-            for interes_idx, interes_anual in enumerate(np.linspace(1, 10, 10)):
-                row = TableRow()
-                cur_fila = int(buzon_idx*10 + interes_idx)
-                
-                # Buzon label (only on first row per buzón)
-                if interes_idx == 0:
-                    buzon_label = f"1/{buzon_size}" if buzon_size != 1 else "1"
-                else:
-                    buzon_label = ""
-                cell = TableCell()
-                cell.addElement(P(text=buzon_label))
-                row.addElement(cell)
-                cell = TableCell()
-                cell.addElement(P(text=f"{interes_anual:.1f}"))
-                row.addElement(cell)
-                
-                # Add data cells (mean and std in separate columns)
-                for col_idx in range(2, 16, 2):
-                    mean_val = tabla[cur_fila, col_idx]
-                    std_val = tabla[cur_fila, col_idx + 1]
-                    if col_idx == 14:  # ganancia (percentage)
-                        text_mean = f"{100*mean_val:.2f}"
-                        text_std = f"{100*std_val:.2f}"
+    for buzon_idx, buzon_size in enumerate(buzones_sizes):
+        for interes_anual in np.linspace(1, 10, 10):
+            cur_fila = int(buzon_idx*10 + (interes_anual-1))
+            interes = (1+interes_anual/100)**(1/365)-1
+            
+            # caso logístico
+            # costo logístico
+            costos_logisticos_logistico = []
+            for seed in seed_keys:
+                try:
+                    if len(exp_dict[seed]['0.0'][str(buzon_idx)]) == 2:
+                        costos_logisticos_logistico.append(exp_dict[seed]['0.0'][str(buzon_idx)][0])
                     else:
-                        text_mean = f"{1e3*mean_val:.2G}"
-                        text_std = f"{1e3*std_val:.2G}"
-                    cell = TableCell()
-                    cell.addElement(P(text=text_mean))
-                    row.addElement(cell)
-                    cell = TableCell()
-                    cell.addElement(P(text=text_std))
-                    row.addElement(cell)
-                
-                table.addElement(row)
-        
-        doc.spreadsheet.addElement(table)
+                        print(exp_dict[seed]['0.0'][str(buzon_idx)][2])
+                except (KeyError, IndexError):
+                    continue
+            
+            if len(costos_logisticos_logistico) == 0:
+                continue
+            
+            mean = np.mean(costos_logisticos_logistico)
+            std = np.std(costos_logisticos_logistico)
+            tabla[cur_fila, 0] = buzon_idx  # buzon
+            tabla[cur_fila, 1] = interes_anual  # interes
+            tabla[cur_fila, 2] = mean
+            tabla[cur_fila, 3] = std
+            
+            # costo financiero
+            costos_financieros_logistico = []
+            for seed in seed_keys:
+                try:
+                    if len(exp_dict[seed]['0.0'][str(buzon_idx)]) == 2:
+                        costos_financieros_logistico.append(exp_dict[seed]['0.0'][str(buzon_idx)][1]*interes)
+                    else:
+                        print(exp_dict[seed]['0.0'][str(buzon_idx)][2])
+                except (KeyError, IndexError):
+                    continue
+            
+            mean = np.mean(costos_financieros_logistico)
+            std = np.std(costos_financieros_logistico)
+            tabla[cur_fila, 4] = mean
+            tabla[cur_fila, 5] = std
+            
+            # costo total
+            costos_total_logistico = [c_log + c_fin for c_log, c_fin in zip(costos_logisticos_logistico, costos_financieros_logistico)]
+            mean = np.mean(costos_total_logistico)
+            std = np.std(costos_total_logistico)
+            tabla[cur_fila, 6] = mean
+            tabla[cur_fila, 7] = std
+            
+            # caso financiero
+            # costo financiero
+            costos_financieros_financiero = []
+            for seed in seed_keys:
+                try:
+                    if len(exp_dict[seed]['0.0'][str(buzon_idx)]) == 2:
+                        costos_financieros_financiero.append(exp_dict[seed][str(interes_anual)][str(buzon_idx)][1]*interes)
+                    else:
+                        print(exp_dict[seed]['0.0'][str(buzon_idx)][2])
+                except (KeyError, IndexError):
+                    continue
+            
+            mean = np.mean(costos_financieros_financiero)
+            std = np.std(costos_financieros_financiero)
+            tabla[cur_fila, 10] = mean
+            tabla[cur_fila, 11] = std
+            
+            # costo total
+            costos_total_financiero = []
+            for seed in seed_keys:
+                try:
+                    if len(exp_dict[seed]['0.0'][str(buzon_idx)]) == 2:
+                        costos_total_financiero.append(exp_dict[seed][str(interes_anual)][str(buzon_idx)][0])
+                    else:
+                        print(exp_dict[seed]['0.0'][str(buzon_idx)][2])
+                except (KeyError, IndexError):
+                    continue
+            
+            mean = np.mean(costos_total_financiero)
+            std = np.std(costos_total_financiero)
+            tabla[cur_fila, 12] = mean
+            tabla[cur_fila, 13] = std
+            
+            # costo logístico
+            costos_logistico_financiero = [c_tot - c_fin for c_tot, c_fin in zip(costos_total_financiero, costos_financieros_financiero)]
+            mean = np.mean(costos_logistico_financiero)
+            std = np.std(costos_logistico_financiero)
+            tabla[cur_fila, 8] = mean
+            tabla[cur_fila, 9] = std
+            
+            # ganancia
+            ganancias = [(c_log - c_fin) / c_log for c_log, c_fin in zip(costos_total_logistico, costos_total_financiero)]
+            mean = np.mean(ganancias)
+            std = np.std(ganancias)
+            tabla[cur_fila, 14] = mean
+            tabla[cur_fila, 15] = std
     
-    doc.save(ods_file)
+    if csv_file:
+        with open(csv_file, 'w', encoding='utf-8') as f:
+            ver_tabla(tabla, std_output, f)
+    else:
+        ver_tabla(tabla, std_output, csv_file)
 
 
 def main():
@@ -338,86 +227,35 @@ def main():
         help="Archivo JSON del experimento (si es nombre simple, se busca en experiments/runs/)"
     )
     parser.add_argument(
-        "--output",
+        "--std-output", 
+        action="store_true", 
+        help="Si se incluye, imprime la salida en la terminal"
+    )
+    parser.add_argument(
+        "--csv-output",
         type=str,
         nargs='?',
         const='',
         default=None,
-        help="Generar archivo de texto. Si se especifica sin argumento, auto-genera el nombre. Si se especifica con ruta, usa esa ruta. (por defecto: stdout)"
-    )
-    parser.add_argument(
-        "--ods",
-        type=str,
-        nargs='?',
-        const='',
-        default=None,
-        help="Generar archivo ODS. Si se especifica sin argumento, auto-genera el nombre. Si se especifica con ruta, usa esa ruta. (requiere 'odfpy': pip install odfpy)"
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        default=None,
-        help="Directorio donde guardar archivos (por defecto: artifacts/reports/)"
+        help="Archivo de texto donde escribir la tabla. Si no se especifica ruta, se genera automáticamente en artifacts/reports/tabla_<exp-id>.csv. Si se especifica ruta, usa esa ruta"
     )
     args = parser.parse_args()
     
     try:
         exp_dict = parse_experiment(args.exp_id)
         
-        # Determine output paths
-        output_file = None
-        ods_file = args.ods
+        # Determine output path
+        csv_file = args.csv_output
         
-        if args.output_dir:
-            output_dir = args.output_dir
-        else:
+        if csv_file == "":
             repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             output_dir = os.path.join(repo_root, 'artifacts', 'reports')
+            os.makedirs(output_dir, exist_ok=True)
+            # Generate base filename from exp_id if not specified
+            base_name = os.path.splitext(os.path.basename(args.exp_id))[0]
+            csv_file = os.path.join(output_dir, f"tabla_{base_name}.csv")
         
-        os.makedirs(output_dir, exist_ok=True)
-        
-        # Generate base filename from exp_id if not specified
-        base_name = os.path.splitext(os.path.basename(args.exp_id))[0]
-        
-        # Determine output paths
-        if args.output is None and args.ods is None:
-            # Default: print to stdout
-            generate_tables(exp_dict, None, None)
-        else:
-            # Generate files
-            # Handle --output: '' (empty string) means auto-generate, non-empty string means use that path
-            if args.output == '':
-                output_path = os.path.join(output_dir, f"tabla_{base_name}.txt")
-            elif args.output:
-                output_path = args.output
-            else:
-                output_path = None
-            
-            # Handle --ods: '' (empty string) means auto-genera, non-empty string means use that path
-            if args.ods == '':
-                ods_path = os.path.join(output_dir, f"tabla_{base_name}.ods")
-            elif args.ods:
-                ods_path = args.ods
-            else:
-                ods_path = None
-            
-            # If output is requested, we need at least a text file
-            if output_path is None and ods_path:
-                # If only ODS is requested, also generate text file
-                output_path = os.path.join(output_dir, f"tabla_{base_name}.txt")
-            
-            if output_path:
-                with open(output_path, 'w', encoding='utf-8') as f:
-                    ods_success = generate_tables(exp_dict, f, ods_path)
-                print(f"Archivo de texto generado: {output_path}", file=sys.stderr)
-                if ods_path and not ods_success:
-                    print(f"ADVERTENCIA: No se pudo generar el archivo ODS: {ods_path}", file=sys.stderr)
-            else:
-                # Only ODS requested (but this shouldn't happen with current logic)
-                ods_success = generate_tables(exp_dict, None, ods_path)
-                if ods_path and not ods_success:
-                    print(f"ADVERTENCIA: No se pudo generar el archivo ODS: {ods_path}", file=sys.stderr)
-                
+        generate_tables(exp_dict, args.std_output, csv_file)
     except FileNotFoundError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
