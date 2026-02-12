@@ -185,6 +185,16 @@ def agregar_resultado(exp_dict, collection_profile, std, profile_name, n_thr, so
                 continue
             else:
                 try:
+                    if solver == "gurobi":
+                        import gurobipy as gp
+                        problem = Problems[0]
+                        gurobi_model = problem.solverModel
+                        num_solutions = gurobi_model.SolCount
+                        if num_solutions > 1:
+                            # print(f"Number of solutions found: {num_solutions}")
+                            gurobi_model.setParam(gp.GRB.Param.SolutionNumber, rand_seed % num_solutions)
+                            variables = []
+                            variables += problem.variables()
                     # Calcular costo total
                     costo_total = sum([prob.objective.value() for prob in Problems])
                     # Calcular costo financiero sin interés

@@ -230,7 +230,8 @@ def model_problem(
             elif solver == "cuopt":
                 solv = pulp.CUOPT(msg=msg_flag)
             elif solver == "gurobi":
-                solv = pulp.GUROBI(msg=msg_flag, threads=n_thr)
+                #solv = pulp.GUROBI(msg=msg_flag, threads=n_thr)
+                solv = pulp.GUROBI(msg=msg_flag, threads=n_thr, PoolSolutions=100, PoolSearchMode=2, PoolGap=0.0)
             elif solver == "HiGHS":
                 solv = pulp.HiGHS(msg=msg_flag, threads=n_thr)
             else:
@@ -239,7 +240,6 @@ def model_problem(
             
             try:
                 problem.solve(solver=solv)
-                
                 # Verificar el estado de resolución
                 if problem.status == pulp.LpStatusOptimal:
                     cur_status = 'Resuelto (Óptimo)'

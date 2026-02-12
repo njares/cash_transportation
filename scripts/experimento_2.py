@@ -120,7 +120,7 @@ if args.profile == "C":
 	if args.std == -1.0:
 		std = .525
 	else:
-		std = arg.std
+		std = args.std
 	collections_profile_constant = np.array(dias_habiles_profile)
 	collections_profile_constant = collections_profile_constant / np.sum(collections_profile_constant)
 	collections_constant = np.tile(collections_profile_constant,(n_s,1))*COLLECTION_MULT
@@ -129,7 +129,7 @@ elif args.profile == "V":
 	if args.std == -1.0:
 		std = .3444
 	else:
-		std = arg.std
+		std = args.std
 	collections_profile_V = np.hstack([np.linspace(1,V_profile_max,V_max_day,endpoint=False),np.linspace(V_profile_max,1,30-V_max_day,endpoint=False)])
 	collections_profile_V = collections_profile_V*np.array(dias_habiles_profile)
 	collections_profile_V /= np.sum(collections_profile_V)
