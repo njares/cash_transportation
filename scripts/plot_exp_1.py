@@ -53,7 +53,25 @@ def plot_ganancias(tabla_df, output_file=None):
     print(f"Gráfico guardado en: {output_file}")
 
 
-def main():
+def parse_csv(csv_file):
+    """
+    Parsea el archivo csv y devuelve un dataframe.
+    Si csv_file es solo un nombre, busca en artifacts/reports.
+    """
+    # Si es solo un nombre, buscar en artifacts/reports
+    if os.path.sep not in csv_file and not csv_file.startswith('/'):
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        csv_file = os.path.join(repo_root, 'artifacts', 'reports', csv_file)
+    
+    if not os.path.exists(csv_file):
+        raise FileNotFoundError(f"Archivo csv no encontrado: {csv_file}")
+    
+    tabla_df = pd.read_csv(csv_file)
+
+    return tabla_df
+
+
+def main(args_list=None):
     parser = argparse.ArgumentParser(
         description="Genera gráficos comparativos de ganancias a partir de archivos CSV."
     )
@@ -69,7 +87,7 @@ def main():
         help="Archivo de salida para guardar la imagen (opcional)"
     )
     
-    args = parser.parse_args()
+    args = parser.parse_args(args_list)
     
     try:
         output_path = args.output
@@ -80,9 +98,9 @@ def main():
             os.makedirs(output_dir, exist_ok=True)
             base_name = os.path.splitext(os.path.basename(args.csv_file))[0]
             output_path = os.path.join(output_dir, f"{base_name}.png")
-    
-        tabla_df = pd.read_csv(args.csv_file)
-
+        
+        tabla_df = parse_csv(args.csv_file)
+        
         # Generar el gráfico
         plot_ganancias(tabla_df, output_path)
 
@@ -94,5 +112,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import pdb;pdb.set_trace()
     main()

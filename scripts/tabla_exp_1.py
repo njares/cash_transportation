@@ -216,7 +216,7 @@ def generate_tables(exp_dict, std_output=False, csv_file=None):
         ver_tabla(tabla, std_output, csv_file)
 
 
-def main():
+def main(args_list=None):
     parser = argparse.ArgumentParser(
         description="Genera tablas resumen de experimentos con estadísticas (mean ± std)"
     )
@@ -239,7 +239,7 @@ def main():
         default=None,
         help="Archivo de texto donde escribir la tabla. Si no se especifica ruta, se genera automáticamente en artifacts/reports/tabla_<exp-id>.csv. Si se especifica ruta, usa esa ruta"
     )
-    args = parser.parse_args()
+    args = parser.parse_args(args_list)
     
     try:
         exp_dict = parse_experiment(args.exp_id)

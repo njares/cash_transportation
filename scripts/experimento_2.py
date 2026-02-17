@@ -14,189 +14,189 @@ import argparse
 import os
 import time
 
-########################################################################
-# Parámetros configurables (via CLI)
 
-parser = argparse.ArgumentParser(description="Experimento 2 - corridas con distintos perfiles/solvers")
-parser.add_argument("--threads", type=int, default=8, help="cantidad de hilos")
-parser.add_argument("--n-min", type=int, default=3, help="mínimo de iteraciones por escenario")
-parser.add_argument("--n-max", type=int, default=0, help="máximo de iteraciones por escenario (0 = sin tope)")
-parser.add_argument("--solver", type=str, default="HiGHS", help="solver a utilizar (ej. HiGHS, fscip)")
-parser.add_argument("--collection-mult", type=float, default=1.0, help="multiplicador de recaudación total")
-parser.add_argument("--exp-id", type=str, default="exp_test.json", help="archivo JSON del experimento (nombre simple se guarda en experiments/runs)")
-parser.add_argument("--data-dir", type=str, default="./data/generated/", help="directorio donde escribir CSVs de entrada generados")
-parser.add_argument("--V-profile-max", type=float, default=2.0, help="Cuánto más grande es la recaudación máxima respecto a la mínima en el perfil V. Por defecto: 2.0")
-parser.add_argument("--V-max-day", type=int, default=10, help="Qué día se realiza la máxima recaudación. Por defecto: 10")
-parser.add_argument("--route-cost-mult", type=float, default=1.5e-3, help="Multiplicador de costo de rutas. Por defecto: 1.5e-3")
-parser.add_argument("--profile", type=str, default="C", help="Perfil de recaudación (C: constante, V: wedge)")
-parser.add_argument("--std", type=float, default=-1.0, help="Desviación estándar. Por defecto: .525 para perfil constante y .3444 para perfil V")
-args = parser.parse_args()
+def main(args_list=None):
+	########################################################################
+	# Parámetros configurables (via CLI)
 
-n_thr = args.threads
-N_min = args.n_min + 1
-if args.n_max != 0:
-	N_max = args.n_max
-else:
-	N_max = np.inf
-solver = args.solver
-COLLECTION_MULT = args.collection_mult
-exp_id = args.exp_id
-V_profile_max = args.V_profile_max
-V_max_day = args.V_max_day
-route_cost_mult = args.route_cost_mult
-if os.path.sep not in exp_id and not exp_id.startswith('/'):
-    # guardar por defecto en experiments/runs si es un nombre simple
-    exp_id = os.path.join(_repo_root, 'experiments', 'runs', exp_id)
-exp_dir = os.path.dirname(exp_id)
-if exp_dir:
-    os.makedirs(exp_dir, exist_ok=True)
-if not os.path.exists(exp_id):
-    with open(exp_id, 'w', encoding='utf-8') as _f:
-        json.dump({}, _f)
-profile = args.profile
+	parser = argparse.ArgumentParser(description="Experimento 2 - corridas con distintos perfiles/solvers")
+	parser.add_argument("--threads", type=int, default=8, help="cantidad de hilos")
+	parser.add_argument("--n-min", type=int, default=3, help="mínimo de iteraciones por escenario")
+	parser.add_argument("--n-max", type=int, default=0, help="máximo de iteraciones por escenario (0 = sin tope)")
+	parser.add_argument("--solver", type=str, default="HiGHS", help="solver a utilizar (ej. HiGHS, fscip)")
+	parser.add_argument("--collection-mult", type=float, default=1.0, help="multiplicador de recaudación total")
+	parser.add_argument("--exp-id", type=str, default="exp_test.json", help="archivo JSON del experimento (nombre simple se guarda en experiments/runs)")
+	parser.add_argument("--data-dir", type=str, default="./data/generated/", help="directorio donde escribir CSVs de entrada generados")
+	parser.add_argument("--V-profile-max", type=float, default=2.0, help="Cuánto más grande es la recaudación máxima respecto a la mínima en el perfil V. Por defecto: 2.0")
+	parser.add_argument("--V-max-day", type=int, default=10, help="Qué día se realiza la máxima recaudación. Por defecto: 10")
+	parser.add_argument("--route-cost-mult", type=float, default=1.5e-3, help="Multiplicador de costo de rutas. Por defecto: 1.5e-3")
+	parser.add_argument("--profile", type=str, default="C", help="Perfil de recaudación (C: constante, V: wedge)")
+	parser.add_argument("--std", type=float, default=-1.0, help="Desviación estándar. Por defecto: .525 para perfil constante y .3444 para perfil V")
+	args = parser.parse_args(args_list)
 
-########################################################################
-# Parámetros fijos
-
-n_s = 4 # número de sucursales
-n_p = 8 # número de rutas
-# matriz de rutas
-rutas = np.array([\
-[1.0, 0.0, 0.0, 0.0], \
-[0.0, 1.0, 0.0, 0.0], \
-[0.0, 0.0, 1.0, 0.0], \
-[0.0, 0.0, 0.0, 1.0], \
-[0.0, 0.0, 1.0, 1.0], \
-[0.0, 1.0, 0.0, 1.0], \
-[1.0, 0.0, 0.0, 1.0], \
-[1.0, 1.0, 1.0, 1.0] \
-])
-rutas = pd.DataFrame(rutas)
-
-# costos de rutas
-#	- Elegirlos de manera que reflejen la idea de distancia en el grafo elegido. 
-# Grafo
-#	    ----A---B
-#	  /   / | /
-#	R---D---C
-# Distancias
-#	{A}			R-A-R				2*(1+np.sqrt(2))
-#	{B}			R-A-B-A-R			2*(2+np.sqrt(2))
-#	{C}			R-D-C-D-R			4
-#	{D}			R-D-R				2
-#	{C,D}		R-D-C-D-R			4
-#	{B,D}		R-D-C-B-C-D-R		2*(2+np.sqrt(2))
-#	{A,D}		R-D-A-R				2*(1+np.sqrt(2))
-#	{A,B,C,D}	R-D-C-B-A-R			2*(2+np.sqrt(2))
-
-costos_rutas = np.array([\
-2*(1+np.sqrt(2)),\
-2*(2+np.sqrt(2)),\
-4               ,\
-2               ,\
-4               ,\
-2*(2+np.sqrt(2)),\
-2*(1+np.sqrt(2)),\
-2*(2+np.sqrt(2))\
-])
-
-#	El orden de magnitud para el caso naranja fue:
-#		1.5e-03 = (total costo logisticio mensual) / (total recaudacion mensual)
-# (total recaudacion mensual) = 1
-
-costos_rutas = COLLECTION_MULT*costos_rutas * route_cost_mult / (4 * np.average(costos_rutas))
-costos_rutas = pd.DataFrame(costos_rutas)
-
-# días hábiles
-dias_habiles_profile = [1,1,1,1,1,1,0]*4+[1,1]
-dias_habiles = np.tile(dias_habiles_profile,(n_p,1))
-dias_habiles = pd.DataFrame(dias_habiles)
-
-# ToDo: parámetro que se usa si no todas las sucursales tienen los mismos totales de recaudación
-prop_suc = np.ones(n_s)
-prop_suc = pd.DataFrame(prop_suc)
-
-if args.profile == "C":
-	if args.std == -1.0:
-		std = .525
+	n_thr = args.threads
+	N_min = args.n_min + 1
+	if args.n_max != 0:
+		N_max = args.n_max
 	else:
-		std = args.std
-	collections_profile_constant = np.array(dias_habiles_profile)
-	collections_profile_constant = collections_profile_constant / np.sum(collections_profile_constant)
-	collections_constant = np.tile(collections_profile_constant,(n_s,1))*COLLECTION_MULT
-	collection_profile = collections_constant
-elif args.profile == "V":
-	if args.std == -1.0:
-		std = .3444
+		N_max = np.inf
+	solver = args.solver
+	COLLECTION_MULT = args.collection_mult
+	exp_id = args.exp_id
+	V_profile_max = args.V_profile_max
+	V_max_day = args.V_max_day
+	route_cost_mult = args.route_cost_mult
+	if os.path.sep not in exp_id and not exp_id.startswith('/'):
+		# guardar por defecto en experiments/runs si es un nombre simple
+		exp_id = os.path.join(_repo_root, 'experiments', 'runs', exp_id)
+	exp_dir = os.path.dirname(exp_id)
+	if exp_dir:
+		os.makedirs(exp_dir, exist_ok=True)
+	if not os.path.exists(exp_id):
+		with open(exp_id, 'w', encoding='utf-8') as _f:
+			json.dump({}, _f)
+	profile = args.profile
+
+	########################################################################
+	# Parámetros fijos
+
+	n_s = 4 # número de sucursales
+	n_p = 8 # número de rutas
+	# matriz de rutas
+	rutas = np.array([\
+	[1.0, 0.0, 0.0, 0.0], \
+	[0.0, 1.0, 0.0, 0.0], \
+	[0.0, 0.0, 1.0, 0.0], \
+	[0.0, 0.0, 0.0, 1.0], \
+	[0.0, 0.0, 1.0, 1.0], \
+	[0.0, 1.0, 0.0, 1.0], \
+	[1.0, 0.0, 0.0, 1.0], \
+	[1.0, 1.0, 1.0, 1.0] \
+	])
+	rutas = pd.DataFrame(rutas)
+
+	# costos de rutas
+	#	- Elegirlos de manera que reflejen la idea de distancia en el grafo elegido. 
+	# Grafo
+	#	    ----A---B
+	#	  /   / | /
+	#	R---D---C
+	# Distancias
+	#	{A}			R-A-R				2*(1+np.sqrt(2))
+	#	{B}			R-A-B-A-R			2*(2+np.sqrt(2))
+	#	{C}			R-D-C-D-R			4
+	#	{D}			R-D-R				2
+	#	{C,D}		R-D-C-D-R			4
+	#	{B,D}		R-D-C-B-C-D-R		2*(2+np.sqrt(2))
+	#	{A,D}		R-D-A-R				2*(1+np.sqrt(2))
+	#	{A,B,C,D}	R-D-C-B-A-R			2*(2+np.sqrt(2))
+
+	costos_rutas = np.array([\
+	2*(1+np.sqrt(2)),\
+	2*(2+np.sqrt(2)),\
+	4               ,\
+	2               ,\
+	4               ,\
+	2*(2+np.sqrt(2)),\
+	2*(1+np.sqrt(2)),\
+	2*(2+np.sqrt(2))\
+	])
+
+	#	El orden de magnitud para el caso naranja fue:
+	#		1.5e-03 = (total costo logisticio mensual) / (total recaudacion mensual)
+	# (total recaudacion mensual) = 1
+
+	costos_rutas = COLLECTION_MULT*costos_rutas * route_cost_mult / (4 * np.average(costos_rutas))
+	costos_rutas = pd.DataFrame(costos_rutas)
+
+	# días hábiles
+	dias_habiles_profile = [1,1,1,1,1,1,0]*4+[1,1]
+	dias_habiles = np.tile(dias_habiles_profile,(n_p,1))
+	dias_habiles = pd.DataFrame(dias_habiles)
+
+	# ToDo: parámetro que se usa si no todas las sucursales tienen los mismos totales de recaudación
+	prop_suc = np.ones(n_s)
+	prop_suc = pd.DataFrame(prop_suc)
+
+	if args.profile == "C":
+		if args.std == -1.0:
+			std = .525
+		else:
+			std = args.std
+		collections_profile_constant = np.array(dias_habiles_profile)
+		collections_profile_constant = collections_profile_constant / np.sum(collections_profile_constant)
+		collections_constant = np.tile(collections_profile_constant,(n_s,1))*COLLECTION_MULT
+		collection_profile = collections_constant
+	elif args.profile == "V":
+		if args.std == -1.0:
+			std = .3444
+		else:
+			std = args.std
+		collections_profile_V = np.hstack([np.linspace(1,V_profile_max,V_max_day,endpoint=False),np.linspace(V_profile_max,1,30-V_max_day,endpoint=False)])
+		collections_profile_V = collections_profile_V*np.array(dias_habiles_profile)
+		collections_profile_V /= np.sum(collections_profile_V)
+		collections_V = np.tile(collections_profile_V,(n_s,1))*COLLECTION_MULT
+		collection_profile = collections_V
 	else:
-		std = args.std
-	collections_profile_V = np.hstack([np.linspace(1,V_profile_max,V_max_day,endpoint=False),np.linspace(V_profile_max,1,30-V_max_day,endpoint=False)])
-	collections_profile_V = collections_profile_V*np.array(dias_habiles_profile)
-	collections_profile_V /= np.sum(collections_profile_V)
-	collections_V = np.tile(collections_profile_V,(n_s,1))*COLLECTION_MULT
-	collection_profile = collections_V
-else:
-	print("Perfil no válido")
-	sys.exit(1)     
+		print("Perfil no válido")
+		sys.exit(1)     
 
-profile_name = args.profile
+	profile_name = args.profile
 
-data_dir = args.data_dir
-os.makedirs(data_dir, exist_ok=True)
+	data_dir = args.data_dir
+	os.makedirs(data_dir, exist_ok=True)
 
-# Dias habiles por ruta
-habiles_csv_path = os.path.join(data_dir, "habiles.csv")
-dias_habiles.to_csv(habiles_csv_path, header=False, index=False)
+	# Dias habiles por ruta
+	habiles_csv_path = os.path.join(data_dir, "habiles.csv")
+	dias_habiles.to_csv(habiles_csv_path, header=False, index=False)
 
-# Datos de rutas
-rutas_csv_path = os.path.join(data_dir, "rutas.csv")
-rutas.to_csv(rutas_csv_path, header=False, index=False)
+	# Datos de rutas
+	rutas_csv_path = os.path.join(data_dir, "rutas.csv")
+	rutas.to_csv(rutas_csv_path, header=False, index=False)
 
-# Costos por ruta
-costo_rutas_csv_path = os.path.join(data_dir, "costo_rutas.csv")
-costos_rutas.to_csv(costo_rutas_csv_path, header=False, index=False)
+	# Costos por ruta
+	costo_rutas_csv_path = os.path.join(data_dir, "costo_rutas.csv")
+	costos_rutas.to_csv(costo_rutas_csv_path, header=False, index=False)
 
-########################################################################
+	########################################################################
 
-# Ejecución de escenarios
+	# Ejecución de escenarios
 
-# Llaves:
-#	- rand_seed (1)
-#		- interés (11) [0,1,2,3,4,5,6,7,8,9,10]
-#			- buzón (4)
+	# Llaves:
+	#	- rand_seed (1)
+	#		- interés (11) [0,1,2,3,4,5,6,7,8,9,10]
+	#			- buzón (4)
 
-# Values:
-#	- costo total
-#	- costo financiero sin interés
+	# Values:
+	#	- costo total
+	#	- costo financiero sin interés
 
-# abrir archivo
-with open(exp_id,'r',encoding='utf-8') as f:
-	exp_dict = json.load(f)
+	# abrir archivo
+	with open(exp_id,'r',encoding='utf-8') as f:
+		exp_dict = json.load(f)
 
-# mientras N < N_min
-while len(exp_dict) < N_min:
-	# agregar una corrida
-	exp_dict = agregar_resultado(exp_dict, collection_profile, std, profile_name, n_thr, solver, data_dir=data_dir)
-	# guardar dict
-	with open(exp_id,'w',encoding='utf-8') as f:
-		json.dump(exp_dict,f,indent=2)
+	# mientras N < N_min
+	while len(exp_dict) < N_min:
+		# agregar una corrida
+		exp_dict = agregar_resultado(exp_dict, collection_profile, std, profile_name, n_thr, solver, data_dir=data_dir)
+		# guardar dict
+		with open(exp_id,'w',encoding='utf-8') as f:
+			json.dump(exp_dict,f,indent=2)
 
-# calcular delta_std 
-delta_std = calcula_delta_std(exp_dict)
-print(f"{delta_std = }")
-
-# mientras delta_std > 0.01 y N < N_max
-while delta_std > 0.01 and len(exp_dict) < N_max:
-	# agregar una corrida
-	exp_dict = agregar_resultado(exp_dict, collection_profile, std, profile_name, n_thr, solver, data_dir=data_dir)
-	# guardar dict
-	with open(exp_id,'w',encoding='utf-8') as f:
-		json.dump(exp_dict,f,indent=2)
-	# calcular delta_std
+	# calcular delta_std 
 	delta_std = calcula_delta_std(exp_dict)
 	print(f"{delta_std = }")
 
-sys.exit()
+	# mientras delta_std > 0.01 y N < N_max
+	while delta_std > 0.01 and len(exp_dict) < N_max:
+		# agregar una corrida
+		exp_dict = agregar_resultado(exp_dict, collection_profile, std, profile_name, n_thr, solver, data_dir=data_dir)
+		# guardar dict
+		with open(exp_id,'w',encoding='utf-8') as f:
+			json.dump(exp_dict,f,indent=2)
+		# calcular delta_std
+		delta_std = calcula_delta_std(exp_dict)
+		print(f"{delta_std = }")
 
-# print tablita con mean +- std
-
+if __name__ == "__main__":
+    main()
