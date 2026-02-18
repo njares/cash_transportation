@@ -204,7 +204,7 @@ def agregar_resultado(exp_dict, collection_profile, std, profile_name, n_thr, so
                         if var_id == 'e':
                             _, dia = var.name.split('_')[1:]
                             if int(dia) != n_d-1:
-                                costo_financiero += var.varValue
+                                costo_financiero += var.solverVar.Xn
                     exp_dict[str(rand_seed)][str(interes_anual)][str(b)] = [costo_total, costo_financiero]
                     # es sin interés, porque para el costo financiero real
                     # se necesita la siguiente linea:
