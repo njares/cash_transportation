@@ -50,6 +50,7 @@ def plot_ganancias(tabla_df, output_file=None):
     
     # Guardar
     plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    plt.clf()
     print(f"Gráfico guardado en: {output_file}")
 
 

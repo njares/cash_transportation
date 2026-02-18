@@ -132,7 +132,7 @@ def main(args_list=None):
 			std = .3444
 		else:
 			std = args.std
-		collections_profile_V = np.hstack([np.linspace(1,V_profile_max-1,V_max_day,endpoint=False),np.linspace(V_profile_max-1,1,30-V_max_day,endpoint=False)])
+		collections_profile_V = np.hstack([np.linspace(1,V_profile_max,V_max_day-1,endpoint=False),np.linspace(V_profile_max,1,30-V_max_day+1,endpoint=False)])
 		collections_profile_V = collections_profile_V*np.array(dias_habiles_profile)
 		collections_profile_V /= np.sum(collections_profile_V)
 		collections_V = np.tile(collections_profile_V,(n_s,1))*COLLECTION_MULT
